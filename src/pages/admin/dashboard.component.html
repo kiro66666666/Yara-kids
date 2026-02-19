@@ -1,0 +1,1077 @@
+﻿
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex font-sans transition-colors duration-300">
+      
+      <!-- Mobile Sidebar Overlay -->
+      @if (mobileMenuOpen) {
+        <div class="fixed inset-0 bg-black/60 z-[90] md:hidden backdrop-blur-sm transition-opacity" (click)="mobileMenuOpen = false"></div>
+      }
+
+      <!-- Sidebar -->
+      <aside class="w-72 bg-white dark:bg-brand-darksurface border-r border-gray-200 dark:border-gray-700 flex flex-col fixed inset-y-0 z-[100] shadow-2xl transform transition-transform duration-300 md:translate-x-0"
+             [class.translate-x-0]="mobileMenuOpen"
+             [class.-translate-x-full]="!mobileMenuOpen">
+        
+        <div class="p-8 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            @if (store.institutional().logoUrl) {
+                <img [src]="store.institutional().logoUrl" class="h-8 w-auto object-contain">
+            } @else {
+                <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg border border-gray-100">
+                  <app-icon name="rainbow" size="24px"></app-icon>
+                </div>
+            }
+            <div>
+              <h1 class="text-xl font-black text-brand-dark dark:text-white tracking-tight">YARA<span class="text-brand-pink">Admin</span></h1>
+              <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Painel v4.9.5</p>
+            </div>
+          </div>
+          <button (click)="mobileMenuOpen = false" class="md:hidden text-gray-400 hover:text-brand-pink"><app-icon name="x" size="24px"></app-icon></button>
+        </div>
+        
+        <nav class="flex-1 p-6 space-y-2 overflow-y-auto custom-scrollbar">
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-2">Principal</p>
+          <button (click)="switchView('dashboard')" [class.bg-brand-soft]="view() === 'dashboard'" [class.text-brand-pink]="view() === 'dashboard'" [class.text-gray-600]="view() !== 'dashboard'" [class.dark:text-gray-300]="view() !== 'dashboard'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-sm group">
+            <app-icon name="home" size="18px" class="group-hover:scale-110 transition-transform"></app-icon> Dashboard
+          </button>
+          <button (click)="switchView('orders')" [class.bg-brand-soft]="view() === 'orders'" [class.text-brand-pink]="view() === 'orders'" [class.text-gray-600]="view() !== 'orders'" [class.dark:text-gray-300]="view() !== 'orders'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-sm group">
+            <app-icon name="package" size="18px" class="group-hover:scale-110 transition-transform"></app-icon> Pedidos 
+            @if(store.orders().length > 0) { <span class="ml-auto bg-red-100 text-red-500 text-[10px] px-2 py-0.5 rounded-full font-bold">{{store.orders().length}}</span> }
+          </button>
+          <button (click)="switchView('messages')" [class.bg-brand-soft]="view() === 'messages'" [class.text-brand-pink]="view() === 'messages'" [class.text-gray-600]="view() !== 'messages'" [class.dark:text-gray-300]="view() !== 'messages'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-sm group">
+            <app-icon name="mail" size="18px" class="group-hover:scale-110 transition-transform"></app-icon> Mensagens
+            @if(store.stockAlerts().length > 0) { <span class="ml-auto bg-orange-100 text-orange-500 text-[10px] px-2 py-0.5 rounded-full font-bold">{{store.stockAlerts().length}}</span> }
+          </button>
+          <button (click)="switchView('feedbacks')" [class.bg-brand-soft]="view() === 'feedbacks'" [class.text-brand-pink]="view() === 'feedbacks'" [class.text-gray-600]="view() !== 'feedbacks'" [class.dark:text-gray-300]="view() !== 'feedbacks'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-sm group">
+            <span class="text-lg">⭐</span> Feedbacks
+            @if(store.feedbacks().length > 0) { <span class="ml-auto bg-yellow-100 text-yellow-600 text-[10px] px-2 py-0.5 rounded-full font-bold">{{store.feedbacks().length}}</span> }
+          </button>
+          
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 mt-8 px-2">Catálogo</p>
+          <button (click)="switchView('products')" [class.bg-brand-soft]="view() === 'products'" [class.text-brand-pink]="view() === 'products'" [class.text-gray-600]="view() !== 'products'" [class.dark:text-gray-300]="view() !== 'products'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-sm group">
+            <app-icon name="grid" size="18px" class="group-hover:scale-110 transition-transform"></app-icon> Produtos
+          </button>
+          <button (click)="switchView('categories')" [class.bg-brand-soft]="view() === 'categories'" [class.text-brand-pink]="view() === 'categories'" [class.text-gray-600]="view() !== 'categories'" [class.dark:text-gray-300]="view() !== 'categories'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-sm group">
+            <app-icon name="grid" size="18px" class="group-hover:scale-110 transition-transform"></app-icon> Categorias
+          </button>
+          <button (click)="switchView('banners')" [class.bg-brand-soft]="view() === 'banners'" [class.text-brand-pink]="view() === 'banners'" [class.text-gray-600]="view() !== 'banners'" [class.dark:text-gray-300]="view() !== 'banners'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-sm group">
+            <app-icon name="star" size="18px" class="group-hover:scale-110 transition-transform"></app-icon> Banners
+          </button>
+          <button (click)="switchView('coupons')" [class.bg-brand-soft]="view() === 'coupons'" [class.text-brand-pink]="view() === 'coupons'" [class.text-gray-600]="view() !== 'coupons'" [class.dark:text-gray-300]="view() !== 'coupons'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-sm group">
+            <app-icon name="dollar-sign" size="18px" class="group-hover:scale-110 transition-transform"></app-icon> Cupons
+          </button>
+          
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 mt-8 px-2">Site</p>
+          <button (click)="switchView('settings')" [class.bg-brand-soft]="view() === 'settings'" [class.text-brand-pink]="view() === 'settings'" [class.text-gray-600]="view() !== 'settings'" [class.dark:text-gray-300]="view() !== 'settings'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-sm group">
+            <app-icon name="menu" size="18px" class="group-hover:scale-110 transition-transform"></app-icon> Configurações
+          </button>
+          <button (click)="switchView('faq')" [class.bg-brand-soft]="view() === 'faq'" [class.text-brand-pink]="view() === 'faq'" [class.text-gray-600]="view() !== 'faq'" [class.dark:text-gray-300]="view() !== 'faq'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-sm group">
+            <app-icon name="help-circle" size="18px" class="group-hover:scale-110 transition-transform"></app-icon> Perguntas Frequentes (FAQ)
+          </button>
+          <button (click)="switchView('instagram')" [class.bg-brand-soft]="view() === 'instagram'" [class.text-brand-pink]="view() === 'instagram'" [class.text-gray-600]="view() !== 'instagram'" [class.dark:text-gray-300]="view() !== 'instagram'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-sm group">
+            <app-icon name="instagram" size="18px" class="group-hover:scale-110 transition-transform"></app-icon> Feed Instagram
+          </button>
+          <button (click)="switchView('notifications')" [class.bg-brand-soft]="view() === 'notifications'" [class.text-brand-pink]="view() === 'notifications'" [class.text-gray-600]="view() !== 'notifications'" [class.dark:text-gray-300]="view() !== 'notifications'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-sm group">
+            <app-icon name="mail" size="18px" class="group-hover:scale-110 transition-transform"></app-icon> Notificações Globais
+          </button>
+        </nav>
+
+        <div class="p-6 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+           <div class="flex items-center gap-3 mb-4">
+             <div class="w-8 h-8 rounded-full bg-brand-dark dark:bg-black text-white flex items-center justify-center font-bold text-xs">
+               {{ store.user()?.name?.charAt(0) || 'A' }}
+             </div>
+             <div class="flex-1 min-w-0">
+               <p class="text-sm font-bold text-gray-800 dark:text-white truncate">{{ store.user()?.name }}</p>
+               <p class="text-xs text-green-500 font-medium flex items-center gap-1"><span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Online</p>
+             </div>
+           </div>
+           
+           <div class="flex items-center gap-1 bg-white dark:bg-gray-700 rounded-xl p-1.5 border border-gray-200 dark:border-gray-600 mb-3 shadow-sm">
+             <button (click)="store.setMode('visual')" class="flex-1 py-2.5 rounded-lg text-[10px] font-black transition-all text-center flex items-center justify-center gap-1" [ngClass]="{'bg-brand-soft text-brand-pink shadow-sm': store.mode() === 'visual', 'text-gray-400 hover:text-gray-600 dark:text-gray-400': store.mode() !== 'visual'}">🎭 Visual</button>
+             <button (click)="store.setMode('real')" class="flex-1 py-2.5 rounded-lg text-[10px] font-black transition-all text-center flex items-center justify-center gap-1" [ngClass]="{'bg-green-100 text-green-600 shadow-sm': store.mode() === 'real', 'text-gray-400 hover:text-gray-600 dark:text-gray-400': store.mode() !== 'real'}">🚀 Real</button>
+           </div>
+
+           <button (click)="logout()" class="w-full flex items-center justify-center gap-2 text-red-500 font-bold text-xs p-3 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors border border-red-100 dark:border-red-900/30 bg-white dark:bg-gray-700 mt-2">
+             <app-icon name="log-out" size="14px"></app-icon> Sair do Sistema
+           </button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="flex-1 md:ml-72 p-4 md:p-8 overflow-y-auto bg-gray-50 dark:bg-brand-darkbg transition-colors duration-300">
+        
+        <!-- Mobile Header -->
+        <div class="md:hidden flex items-center justify-between mb-6 sticky top-0 z-40 bg-gray-100/90 dark:bg-gray-900/90 backdrop-blur pb-2">
+           <div class="flex items-center gap-3">
+             <button (click)="mobileMenuOpen = true" class="p-2.5 bg-white dark:bg-brand-darksurface rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 text-brand-dark dark:text-white">
+               <app-icon name="menu" size="24px"></app-icon>
+             </button>
+             <h2 class="font-black text-xl text-gray-800 dark:text-white">Painel</h2>
+           </div>
+        </div>
+
+        @if (view() === 'dashboard') {
+          <div class="animate-fade-in space-y-8">
+             <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+               <div>
+                 <h2 class="text-3xl font-black text-gray-800 dark:text-white">Dashboard</h2>
+                 <p class="text-sm text-gray-500 dark:text-gray-400 font-medium" *ngIf="store.mode() === 'visual'">⚠️ Modo Visual: Dados fictícios de exemplo.</p>
+                 <p class="text-sm text-green-600 font-medium" *ngIf="store.mode() === 'real'">✅ Modo Produção: Dados reais da loja.</p>
+               </div>
+               <div class="text-sm text-gray-500 dark:text-gray-400 font-medium bg-white dark:bg-brand-darksurface px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm self-start">
+                 📅 {{ todayStr }}
+               </div>
+             </div>
+             <!-- Stats Grid -->
+             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+               <div class="bg-gradient-to-br from-brand-pink to-pink-600 p-6 rounded-3xl shadow-lg text-white relative overflow-hidden group">
+                 <div class="absolute right-0 top-0 opacity-10 transform translate-x-1/3 -translate-y-1/3 transition-transform group-hover:scale-110">
+                   <app-icon name="dollar-sign" size="120px"></app-icon>
+                 </div>
+                 <div class="relative z-10">
+                   <p class="text-pink-100 text-xs font-bold uppercase mb-1">Vendas Totais</p>
+                   <h3 class="text-3xl font-black">R$ {{ store.dashboardStats().sales.toLocaleString('pt-BR', {minimumFractionDigits: 2}) }}</h3>
+                 </div>
+               </div>
+               <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
+                 <div class="flex justify-between items-start mb-4">
+                   <div class="p-3 bg-brand-soft dark:bg-brand-pink/20 rounded-2xl text-brand-pink"><app-icon name="shopping-bag" size="24px"></app-icon></div>
+                 </div>
+                 <p class="text-gray-400 text-xs font-bold uppercase">Pedidos</p>
+                 <h3 class="text-3xl font-black text-brand-dark dark:text-white">{{ store.dashboardStats().orders }}</h3>
+               </div>
+               <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
+                 <div class="flex justify-between items-start mb-4">
+                   <div class="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl text-yellow-500"><app-icon name="star" size="24px"></app-icon></div>
+                 </div>
+                 <p class="text-gray-400 text-xs font-bold uppercase">Ticket Médio</p>
+                 <h3 class="text-3xl font-black text-brand-dark dark:text-white">
+                   R$ {{ (store.dashboardStats().orders > 0 ? store.dashboardStats().sales / store.dashboardStats().orders : 0).toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0}) }}
+                 </h3>
+               </div>
+             </div>
+             <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <div class="flex items-center justify-between mb-6">
+                  <div><h3 class="text-xl font-bold text-gray-800 dark:text-white">Vendas da Semana</h3></div>
+                </div>
+                <div class="relative h-64 w-full" #chartContainer></div>
+             </div>
+          </div>
+        }
+
+        <!-- FEEDBACKS VIEW -->
+        @if (view() === 'feedbacks') {
+          <div class="animate-fade-in space-y-6">
+             <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+               <div>
+                 <h2 class="text-3xl font-black text-gray-800 dark:text-white">Feedbacks dos Clientes</h2>
+                 <p class="text-sm text-gray-500">O que estão falando sobre a YARA Kids.</p>
+               </div>
+             </div>
+             
+             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+               @for (feed of store.feedbacks(); track feed.id) {
+                 <div class="bg-white dark:bg-brand-darksurface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col hover:shadow-md transition-all">
+                    <div class="flex justify-between items-start mb-4">
+                       <div class="flex gap-1 text-yellow-400">
+                         @for(i of [1,2,3,4,5]; track i) {
+                           <span [class.text-gray-200]="i > feed.rating" [class.dark:text-gray-700]="i > feed.rating">★</span>
+                         }
+                       </div>
+                       <button (click)="deleteFeedback(feed.id)" class="text-gray-300 hover:text-red-500 transition-colors"><app-icon name="trash" size="16px"></app-icon></button>
+                    </div>
+                    
+                    <p class="text-gray-600 dark:text-gray-300 text-sm mb-6 flex-1 italic">"{{ feed.message }}"</p>
+                    
+                    <div class="flex items-center gap-3 border-t border-gray-50 dark:border-gray-700 pt-4 mt-auto">
+                       <div class="w-8 h-8 rounded-full bg-brand-soft dark:bg-brand-pink/20 text-brand-pink flex items-center justify-center font-bold text-xs">
+                         {{ feed.name.charAt(0) }}
+                       </div>
+                       <div class="text-xs">
+                         <p class="font-bold text-gray-800 dark:text-white">{{ feed.name }}</p>
+                         <p class="text-gray-400">{{ feed.date }}</p>
+                       </div>
+                    </div>
+                 </div>
+               }
+               @if(store.feedbacks().length === 0) {
+                 <div class="col-span-full text-center py-12 bg-white dark:bg-brand-darksurface rounded-3xl border border-gray-100 dark:border-gray-700 border-dashed">
+                   <p class="text-gray-400">Nenhum feedback recebido ainda.</p>
+                 </div>
+               }
+             </div>
+          </div>
+        }
+
+        <!-- SETTINGS VIEW -->
+        @if (view() === 'settings') {
+          <div class="animate-fade-in space-y-6 max-w-4xl mx-auto pb-20">
+             <div class="flex justify-between items-center">
+               <div>
+                 <h2 class="text-3xl font-black text-gray-800 dark:text-white">Configurações</h2>
+                 <p class="text-sm text-gray-500">Personalize sua loja, contatos e textos.</p>
+               </div>
+               <button (click)="saveSettings()" class="bg-green-500 text-white px-8 py-3 rounded-xl font-bold hover:bg-green-600 shadow-lg transition-all flex items-center gap-2">
+                 <app-icon name="check" size="20px"></app-icon> Salvar Alterações
+               </button>
+             </div>
+
+             <div class="grid grid-cols-1 gap-8">
+               <!-- Identity -->
+               <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
+                  <h3 class="text-lg font-bold text-brand-pink mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">Identidade Visual</h3>
+                  <div class="space-y-4">
+                     <app-image-upload label="Logo do Site" [currentImage]="tempSettings.logoUrl" (imageSelected)="tempSettings.logoUrl = $event"></app-image-upload>
+                     <p class="text-xs text-gray-400 mt-2">A logo será usada no cabeçalho e como ícone do app/navegador.</p>
+                  </div>
+               </div>
+               <!-- Contacts -->
+               <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
+                  <h3 class="text-lg font-bold text-brand-pink mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">Contatos & Redes</h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div>
+                       <label class="block text-xs font-bold text-gray-500 uppercase mb-1">WhatsApp</label>
+                       <input type="text" [(ngModel)]="tempSettings.whatsapp" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                     </div>
+                     <div>
+                       <label class="block text-xs font-bold text-gray-500 uppercase mb-1">E-mail de Contato</label>
+                       <input type="text" [(ngModel)]="tempSettings.email" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                     </div>
+                     <div>
+                       <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Link do Instagram</label>
+                       <input type="text" [(ngModel)]="tempSettings.instagramUrl" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                     </div>
+                     <div>
+                       <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Endereço da Loja</label>
+                       <input type="text" [(ngModel)]="tempSettings.address" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                     </div>
+                  </div>
+               </div>
+               <!-- Payment -->
+               <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
+                  <h3 class="text-lg font-bold text-brand-pink mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">Pagamento</h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div>
+                       <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Chave PIX (CNPJ/Email)</label>
+                       <input type="text" [(ngModel)]="tempSettings.pixKey" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                     </div>
+                     <div class="md:col-span-2 border-t border-gray-100 dark:border-gray-700 mt-2 pt-2"><p class="text-xs font-bold text-gray-400 mb-2">Mercado Pago (Integração)</p></div>
+                     <div>
+                       <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Public Key</label>
+                       <input type="text" [(ngModel)]="tempSettings.mercadoPagoPublicKey" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                     </div>
+                     <div>
+                       <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Access Token</label>
+                       <input type="password" [(ngModel)]="tempSettings.mercadoPagoAccessToken" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                     </div>
+                  </div>
+               </div>
+               <!-- Legal Texts -->
+               <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
+                  <h3 class="text-lg font-bold text-brand-pink mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">Textos Institucionais</h3>
+                  <div class="space-y-4">
+                    <div>
+                      <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Quem Somos (Título)</label>
+                      <input type="text" [(ngModel)]="tempSettings.aboutTitle" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                    </div>
+                    <div>
+                      <app-image-upload label="Imagem Quem Somos" [currentImage]="tempSettings.aboutImage" (imageSelected)="onAboutImageSelected($event)" (fileSelected)="onAboutFileSelected($event)"></app-image-upload>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Quem Somos (Texto Completo)</label>
+                      <textarea [(ngModel)]="tempSettings.aboutText" rows="6" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all"></textarea>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <div>
+                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Política de Privacidade</label>
+                         <textarea [(ngModel)]="tempSettings.privacyText" rows="4" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all"></textarea>
+                       </div>
+                       <div>
+                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Termos de Uso</label>
+                         <textarea [(ngModel)]="tempSettings.termsText" rows="4" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all"></textarea>
+                       </div>
+                       <div>
+                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Política de Trocas</label>
+                         <textarea [(ngModel)]="tempSettings.exchangePolicyText" rows="4" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all"></textarea>
+                       </div>
+                       <div>
+                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Texto Consentimento (Cookies)</label>
+                         <textarea [(ngModel)]="tempSettings.consentText" rows="4" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all"></textarea>
+                       </div>
+                    </div>
+                  </div>
+               </div>
+             </div>
+          </div>
+        }
+
+        <!-- FAQ VIEW -->
+        @if (view() === 'faq') {
+          <div class="animate-fade-in space-y-6 max-w-4xl mx-auto">
+             <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+               <div>
+                 <h2 class="text-3xl font-black text-gray-800 dark:text-white">Perguntas Frequentes (FAQ)</h2>
+                 <p class="text-sm text-gray-500">Gerencie as dúvidas comuns para ajudar seus clientes e treinar a IA.</p>
+               </div>
+               <button (click)="openFaqModal()" class="bg-brand-pink text-white px-6 py-3 rounded-xl font-bold hover:bg-pink-600 shadow-lg flex items-center gap-2"><span>+</span> Nova Pergunta</button>
+             </div>
+             
+             <div class="grid grid-cols-1 gap-4">
+               @for(faq of store.faqs(); track faq.id) {
+                 <div class="bg-white dark:bg-brand-darksurface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all group">
+                    <div class="flex justify-between items-start mb-2">
+                       <h3 class="font-bold text-lg text-gray-800 dark:text-white pr-4">{{ faq.question }}</h3>
+                       <div class="flex gap-2 shrink-0">
+                          <button (click)="openFaqModal(faq)" class="p-2 text-blue-500 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40"><app-icon name="edit" size="16px"></app-icon></button>
+                          <button (click)="deleteFaq(faq.id)" class="p-2 text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40"><app-icon name="trash" size="16px"></app-icon></button>
+                       </div>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-4 rounded-xl">{{ faq.answer }}</p>
+                 </div>
+               }
+               @if(store.faqs().length === 0) {
+                 <div class="text-center py-12 bg-white dark:bg-brand-darksurface rounded-3xl border border-gray-100 dark:border-gray-700 border-dashed">
+                   <p class="text-gray-400">Nenhuma pergunta cadastrada ainda.</p>
+                 </div>
+               }
+             </div>
+          </div>
+        }
+
+        <!-- FAQ MODAL -->
+        @if (showFaqModal) {
+          <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+            <div class="bg-white dark:bg-brand-darksurface rounded-3xl p-6 w-full max-w-lg shadow-2xl relative animate-slide-up border border-gray-100 dark:border-gray-700">
+              <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-6">{{ isEditing ? 'Editar Pergunta' : 'Nova Pergunta' }}</h3>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Pergunta</label>
+                  <input type="text" [(ngModel)]="newFaq.question" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all" placeholder="Ex: Quanto tempo demora a entrega?">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Resposta</label>
+                  <textarea [(ngModel)]="newFaq.answer" rows="6" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all" placeholder="Digite a resposta detalhada..."></textarea>
+                </div>
+              </div>
+              <div class="flex gap-3 mt-8">
+                <button (click)="showFaqModal = false" class="flex-1 py-3 font-bold rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 transition-colors">Cancelar</button>
+                <button (click)="saveFaq()" class="flex-1 py-3 bg-brand-pink text-white font-bold rounded-xl hover:bg-pink-600 transition-colors">Salvar</button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Other views (Banners, Coupons, Messages, Instagram, Products, Categories, Orders) remain unchanged below but included for context -->
+        
+        <!-- BANNERS VIEW -->
+        @if (view() === 'banners') {
+          <div class="animate-fade-in space-y-6">
+             <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+               <h2 class="text-3xl font-black text-gray-800 dark:text-white">Gerenciar Banners</h2>
+               <button (click)="openBannerModal()" class="bg-brand-pink text-white px-6 py-3 rounded-xl font-bold hover:bg-pink-600 shadow-lg flex items-center gap-2"><span>+</span> Novo Banner</button>
+             </div>
+             
+             <div class="grid grid-cols-1 gap-6">
+               @for(banner of store.banners(); track banner.id) {
+                 <div class="bg-white dark:bg-brand-darksurface p-4 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-4 items-center group">
+                    <div class="w-full md:w-48 h-32 rounded-2xl overflow-hidden relative">
+                      <img [src]="banner.image" class="w-full h-full object-cover">
+                      <div class="absolute top-2 left-2 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded">{{ getBannerLocationName(banner.location) }}</div>
+                    </div>
+                    <div class="flex-1 text-center md:text-left">
+                       <h3 class="font-bold text-lg text-gray-800 dark:text-white">{{ banner.title || 'Sem Título' }}</h3>
+                       <p class="text-sm text-gray-500">{{ banner.subtitle }}</p>
+                       <p class="text-xs text-gray-400 mt-1">Link: {{ banner.link }}</p>
+                    </div>
+                    <div class="flex gap-2">
+                       <button (click)="openBannerModal(banner)" class="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100"><app-icon name="edit" size="18px"></app-icon></button>
+                       <button (click)="deleteBanner(banner.id)" class="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100"><app-icon name="trash" size="18px"></app-icon></button>
+                    </div>
+                 </div>
+               }
+             </div>
+          </div>
+        }
+
+        <!-- COUPONS VIEW -->
+        @if (view() === 'coupons') {
+          <div class="animate-fade-in space-y-6">
+             <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+               <h2 class="text-3xl font-black text-gray-800 dark:text-white">Cupons de Desconto</h2>
+               <button (click)="openCouponModal()" class="bg-brand-pink text-white px-6 py-3 rounded-xl font-bold hover:bg-pink-600 shadow-lg flex items-center gap-2"><span>+</span> Novo Cupom</button>
+             </div>
+             
+             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+               @for(coupon of store.coupons(); track coupon.id) {
+                 <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden group">
+                    <div class="flex justify-between items-start mb-4">
+                       <div class="bg-green-100 text-green-700 px-3 py-1 rounded-lg font-black text-xs uppercase tracking-wider">Ativo</div>
+                       <button (click)="deleteCoupon(coupon.id)" class="text-gray-300 hover:text-red-500 transition-colors"><app-icon name="trash" size="18px"></app-icon></button>
+                    </div>
+                    <h3 class="text-2xl font-black text-brand-dark dark:text-white mb-1">{{ coupon.code }}</h3>
+                    <p class="text-brand-pink font-bold text-lg mb-2">{{ coupon.type === 'percent' ? coupon.value + '%' : 'R$ ' + coupon.value }} OFF</p>
+                    <p class="text-xs text-gray-500">Mínimo: R$ {{ coupon.minPurchase }}</p>
+                    <p class="text-xs text-gray-400 mt-2">{{ coupon.description }}</p>
+                    
+                    <!-- Decorative Circles -->
+                    <div class="absolute -left-3 top-1/2 w-6 h-6 bg-gray-50 dark:bg-gray-900 rounded-full"></div>
+                    <div class="absolute -right-3 top-1/2 w-6 h-6 bg-gray-50 dark:bg-gray-900 rounded-full"></div>
+                 </div>
+               }
+             </div>
+          </div>
+        }
+
+        <!-- MESSAGES VIEW -->
+        @if (view() === 'messages') {
+          <div class="animate-fade-in space-y-8">
+             <!-- Contact Messages -->
+             <div>
+               <h2 class="text-2xl font-black text-gray-800 dark:text-white mb-4">Mensagens de Contato</h2>
+               <div class="space-y-4">
+                 @for(msg of store.contactMessages(); track msg.id) {
+                   <div class="bg-white dark:bg-brand-darksurface p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                      <div class="flex justify-between items-start mb-2">
+                         <span class="font-bold text-brand-dark dark:text-white">{{ msg.name }} <span class="text-gray-400 font-normal text-xs ml-2">{{ msg.email }}</span></span>
+                         <span class="text-xs text-gray-400">{{ msg.date }}</span>
+                      </div>
+                      <p class="font-bold text-sm text-brand-pink mb-1">{{ msg.subject }}</p>
+                      <p class="text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-3 rounded-xl">{{ msg.message }}</p>
+                   </div>
+                 }
+                 @if(store.contactMessages().length === 0) { <p class="text-gray-400 text-sm">Nenhuma mensagem recebida.</p> }
+               </div>
+             </div>
+
+             <!-- Stock Alerts -->
+             <div>
+               <h2 class="text-2xl font-black text-gray-800 dark:text-white mb-4">Alertas de Estoque</h2>
+               <div class="bg-white dark:bg-brand-darksurface rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-700">
+                 <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-50 dark:bg-gray-800 text-xs uppercase text-gray-500 font-bold">
+                      <tr><th class="p-4">Produto</th><th class="p-4">Email</th><th class="p-4">Data</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                      @for(alert of store.stockAlerts(); track alert.id) {
+                        <tr>
+                          <td class="p-4 font-medium">{{ alert.productName }}</td>
+                          <td class="p-4 text-blue-500">{{ alert.email }}</td>
+                          <td class="p-4 text-gray-400 text-xs">{{ alert.date }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                 </table>
+                 @if(store.stockAlerts().length === 0) { <p class="p-6 text-center text-gray-400 text-sm">Nenhum alerta de estoque.</p> }
+               </div>
+             </div>
+          </div>
+        }
+
+        <!-- Instagram Feed Management -->
+        @if (view() === 'instagram') {
+          <div class="animate-fade-in space-y-6">
+             <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+               <div>
+                 <h2 class="text-3xl font-black text-gray-800 dark:text-white">Feed do Instagram</h2>
+                 <p class="text-sm text-gray-500">Gerencie as fotos que aparecem na seção "Momentos Mágicos".</p>
+               </div>
+             </div>
+
+             <!-- Upload Area -->
+             <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <h3 class="font-bold text-lg mb-4">Adicionar Nova Foto</h3>
+                <div class="flex flex-col md:flex-row gap-4 items-end">
+                   <app-image-upload label="Foto do Feed" [currentImage]="newInstagramImage" (imageSelected)="onInstagramImageSelected($event)" (fileSelected)="onInstagramFileSelected($event)"></app-image-upload>
+                   <button (click)="addInstagramPost()" [disabled]="!newInstagramImage && !newInstagramFile" class="bg-brand-pink text-white px-6 py-3 rounded-xl font-bold hover:bg-pink-600 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed mb-2 h-12">
+                     Adicionar ao Feed
+                   </button>
+                </div>
+             </div>
+
+             <!-- Grid -->
+             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+               @for (post of store.instagramPosts(); track post.id) {
+                 <div class="relative group aspect-square rounded-xl overflow-hidden shadow-sm">
+                   <img [src]="post.image_url" class="w-full h-full object-cover">
+                   <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                     <button (click)="deleteInstagramPost(post.id)" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transform hover:scale-110 transition-all">
+                       <app-icon name="trash" size="20px"></app-icon>
+                     </button>
+                   </div>
+                 </div>
+               }
+             </div>
+          </div>
+        }
+
+        <!-- Other Views -->
+        @if (view() === 'orders') {
+          <div class="animate-fade-in space-y-6">
+             <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+               <div><h2 class="text-3xl font-black text-gray-800 dark:text-white">Gestão de Pedidos</h2></div>
+               <button (click)="exportOrdersToCSV()" class="bg-green-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-green-600 transition-all flex items-center gap-2 shadow-lg hover:shadow-xl"><span class="text-lg">📊</span> Exportar Relatório</button>
+             </div>
+             <div class="bg-white dark:bg-brand-darksurface rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+               <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                  <thead class="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-800">
+                    <tr><th class="px-6 py-4">ID</th><th class="px-6 py-4">Cliente</th><th class="px-6 py-4">Total</th><th class="px-6 py-4">Status</th><th class="px-6 py-4 text-center">Ações</th></tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                    @for (order of store.orders(); track order.id) {
+                      <tr class="bg-white dark:bg-brand-darksurface hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <td class="px-6 py-4 font-bold">#{{ order.id }}</td>
+                        <td class="px-6 py-4"><p class="font-bold text-gray-800 dark:text-white">{{ order.customerName }}</p></td>
+                        <td class="px-6 py-4 font-bold text-brand-dark dark:text-white">R$ {{ order.total.toFixed(2) }}</td>
+                        <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-xs font-bold uppercase inline-block" [ngClass]="{'bg-yellow-100 text-yellow-700': order.status === 'pending', 'bg-green-100 text-green-700': order.status === 'paid' || order.status === 'delivered', 'bg-blue-100 text-blue-700': order.status === 'shipped', 'bg-red-100 text-red-700': order.status === 'cancelled'}">{{ getStatusLabel(order.status) }}</span></td>
+                        <td class="px-6 py-4 text-center flex items-center justify-center gap-2">
+                           <button (click)="openOrderDetails(order)" class="bg-brand-soft dark:bg-brand-pink/20 text-brand-pink p-2 rounded-lg hover:bg-brand-pink hover:text-white transition-colors" title="Ver Detalhes"><span class="text-lg">👁️</span></button>
+                           <select (change)="updateOrderStatus(order.id, $event)" class="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white text-xs rounded-lg p-2 font-bold w-32"><option value="" disabled selected>Status</option><option value="pending">🟡 Pendente</option><option value="paid">🟢 Pago</option><option value="shipped">🔵 Enviado</option><option value="delivered">✅ Entregue</option><option value="cancelled">🔴 Cancelado</option></select>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+               </div>
+             </div>
+          </div>
+        }
+
+        @if (view() === 'products') {
+          <div class="animate-fade-in space-y-6">
+             <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+               <div class="flex items-center gap-4">
+                 <h2 class="text-2xl md:text-3xl font-black text-gray-800 dark:text-white">Produtos</h2>
+                 @if(selectedProducts().length > 0) { <button (click)="bulkDeleteProducts()" class="animate-bounce-gentle bg-red-100 text-red-600 px-4 py-2 rounded-lg font-bold text-xs items-center gap-2 hover:bg-red-200 flex transition-colors"><app-icon name="trash" size="14px"></app-icon> Excluir {{ selectedProducts().length }}</button> }
+               </div>
+               <button (click)="openProductModal()" class="w-full md:w-auto bg-brand-pink text-white px-6 py-3 rounded-xl font-bold hover:bg-pink-600 shadow-lg flex items-center justify-center gap-2 transition-transform hover:-translate-y-1 text-sm"><span>+</span> <span>Novo Produto</span></button>
+             </div>
+             
+             <div class="bg-white dark:bg-brand-darksurface rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+               <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                  <thead class="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-800">
+                    <tr><th class="px-4 md:px-6 py-4 w-10"><input type="checkbox" (change)="toggleAllProducts($event)" class="rounded text-brand-pink focus:ring-brand-pink border-gray-300"></th><th class="px-4 md:px-6 py-4">Produto</th><th class="px-4 md:px-6 py-4">Preço</th><th class="px-4 md:px-6 py-4 text-center">Ações</th></tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                    @for (product of store.products(); track product.id) {
+                      <tr class="bg-white dark:bg-brand-darksurface hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
+                        <td class="px-4 md:px-6 py-4"><input type="checkbox" [checked]="selectedProducts().includes(product.id)" (change)="toggleProductSelection(product.id)" class="rounded text-brand-pink focus:ring-brand-pink border-gray-300"></td>
+                        <td class="px-4 md:px-6 py-4"><div class="flex items-center gap-3"><img [src]="product.image" class="w-10 h-10 rounded-lg object-cover bg-gray-100 border border-gray-200"><div class="min-w-0"><p class="font-bold text-gray-800 dark:text-gray-200 line-clamp-1 text-xs md:text-sm">{{ product.name }}</p></div></div></td>
+                        <td class="px-4 md:px-6 py-4 font-bold text-brand-dark dark:text-white">R$ {{ product.price.toFixed(2) }}</td>
+                        <td class="px-4 md:px-6 py-4 flex justify-center gap-2"><button (click)="openProductModal(product)" class="text-blue-500 hover:text-blue-700 p-2 bg-blue-50 rounded-lg mr-1"><app-icon name="edit" size="16px"></app-icon></button><button (click)="deleteProduct(product.id)" class="text-red-500 hover:text-red-700 p-2 bg-red-50 rounded-lg"><app-icon name="trash" size="16px"></app-icon></button></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+               </div>
+             </div>
+          </div>
+        }
+
+        @if (view() === 'categories') {
+          <div class="animate-fade-in space-y-6">
+             <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+               <div><h2 class="text-2xl md:text-3xl font-black text-gray-800 dark:text-white">Categorias</h2></div>
+               <button (click)="openCategoryModal()" class="w-full md:w-auto bg-brand-pink text-white px-6 py-3 rounded-xl font-bold hover:bg-pink-600 shadow-lg flex items-center justify-center gap-2 transition-transform hover:-translate-y-1 text-sm"><span>+</span> <span>Nova Categoria</span></button>
+             </div>
+             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+               @for(cat of store.categories(); track cat.id) {
+                 <div class="bg-white dark:bg-brand-darksurface rounded-3xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4 group transition-colors relative">
+                    <div class="w-20 h-20 rounded-2xl overflow-hidden bg-gray-50 dark:bg-gray-800 flex-shrink-0 relative border border-gray-100"><img [src]="cat.image" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"></div>
+                    <div class="flex-1 min-w-0"><h3 class="font-bold text-gray-800 dark:text-white truncate text-lg">{{ cat.name }}</h3></div>
+                    <div class="flex flex-col gap-1"><button (click)="openCategoryModal(cat)" class="p-2 text-blue-500 bg-blue-50 rounded-lg"><app-icon name="edit" size="14px"></app-icon></button><button (click)="deleteCategory(cat.id)" class="p-2 text-red-500 bg-red-50 rounded-lg"><app-icon name="trash" size="14px"></app-icon></button></div>
+                 </div>
+               }
+             </div>
+          </div>
+        }
+
+        @if (view() === 'notifications') {
+          <div class="animate-fade-in space-y-6 max-w-6xl">
+            <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+              <div>
+                <h2 class="text-3xl font-black text-gray-800 dark:text-white">Notificações Globais</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Composer completo, segmentação, histórico e reenvio.</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div class="bg-white dark:bg-brand-darksurface p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                <p class="text-xs text-gray-600 dark:text-gray-400 uppercase font-bold">Campanhas</p>
+                <p class="text-3xl font-black text-brand-dark dark:text-white">{{ notifications.stats().total }}</p>
+              </div>
+              <div class="bg-white dark:bg-brand-darksurface p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                <p class="text-xs text-gray-600 dark:text-gray-400 uppercase font-bold">Concluídas</p>
+                <p class="text-3xl font-black text-green-600">{{ notifications.stats().completed }}</p>
+              </div>
+              <div class="bg-white dark:bg-brand-darksurface p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                <p class="text-xs text-gray-600 dark:text-gray-400 uppercase font-bold">Falhas parciais</p>
+                <p class="text-3xl font-black text-red-500">{{ notifications.stats().failed }}</p>
+              </div>
+            </div>
+
+            <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
+              <h3 class="text-xl font-bold text-gray-800 dark:text-white">Composer</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Título</label>
+                  <input [(ngModel)]="notificationComposer.title" class="admin-field" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Deeplink</label>
+                  <input [(ngModel)]="notificationComposer.deeplink" class="admin-field" />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Mensagem</label>
+                  <textarea [(ngModel)]="notificationComposer.body" rows="3" class="admin-field"></textarea>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Segmento</label>
+                  <select [(ngModel)]="notificationComposer.audience" class="admin-field">
+                    @for (a of audiences; track a.value) {
+                      <option [ngValue]="a.value">{{ a.label }}</option>
+                    }
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Categoria (opcional)</label>
+                  <input [(ngModel)]="notificationComposer.category_slug" class="admin-field" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Imagem (opcional)</label>
+                  <input [(ngModel)]="notificationComposer.image_url" class="admin-field" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Agendamento</label>
+                  <input [(ngModel)]="notificationComposer.schedule_for" type="datetime-local" class="admin-field" />
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-3 pt-2">
+                <button (click)="notificationComposer.send_now = true; sendCampaign()" class="px-5 py-3 rounded-xl bg-brand-pink text-white font-bold">Enviar agora</button>
+                <button (click)="notificationComposer.send_now = false; sendCampaign()" class="px-5 py-3 rounded-xl bg-brand-dark text-white font-bold">Agendar</button>
+                <input [(ngModel)]="templateName" placeholder="Nome do template" class="admin-field max-w-xs" />
+                <button (click)="saveCurrentTemplate()" class="px-5 py-3 rounded-xl bg-green-500 text-white font-bold">Salvar template</button>
+              </div>
+            </div>
+
+            <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
+              <h3 class="text-xl font-bold text-gray-800 dark:text-white">Templates</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                @for (t of notifications.templates(); track t.id) {
+                  <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-3 flex justify-between items-center">
+                    <div>
+                      <p class="font-bold text-sm">{{ t.name }}</p>
+                      <p class="text-xs text-gray-600 dark:text-gray-400">{{ t.title }}</p>
+                    </div>
+                    <button (click)="applyTemplate(t.id)" class="px-3 py-2 rounded-lg bg-brand-soft text-brand-pink font-bold text-xs">Usar</button>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
+              <h3 class="text-xl font-bold text-gray-800 dark:text-white">Histórico</h3>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-gray-600 dark:text-gray-400 uppercase text-xs">
+                      <th class="py-2">Título</th>
+                      <th>Status</th>
+                      <th>Público</th>
+                      <th>Criado em</th>
+                      <th class="text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (c of notifications.campaigns(); track c.id) {
+                      <tr class="border-t border-gray-100 dark:border-gray-700">
+                        <td class="py-3 font-bold">{{ c.title }}</td>
+                        <td>{{ c.status }}</td>
+                        <td>{{ c.audience }}</td>
+                        <td>{{ c.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+                        <td class="text-right space-x-2">
+                          <button (click)="dispatchCampaign(c.id)" class="px-3 py-1 rounded bg-brand-pink text-white text-xs font-bold">Disparar</button>
+                          <button (click)="retryCampaign(c.id)" class="px-3 py-1 rounded bg-orange-500 text-white text-xs font-bold">Reenviar falhas</button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        }
+
+      </main>
+
+      <!-- UPDATED ORDER DETAILS MODAL -->
+      @if (selectedOrder) { 
+        <div class="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" (click)="selectedOrder = null">
+          <div class="bg-white dark:bg-brand-darksurface rounded-3xl p-6 w-full max-w-2xl shadow-2xl relative animate-slide-up border border-gray-100 dark:border-gray-700 max-h-[90vh] overflow-y-auto custom-scrollbar" (click)="$event.stopPropagation()">
+            
+            <div class="flex justify-between items-start mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
+              <div>
+                <h3 class="text-2xl font-black text-gray-800 dark:text-white">Pedido #{{ selectedOrder.id }}</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ selectedOrder.date }}</p>
+              </div>
+              <button (click)="selectedOrder = null" class="bg-gray-100 dark:bg-gray-800 p-2 rounded-full hover:bg-gray-200 transition-colors"><app-icon name="x" size="20px"></app-icon></button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <!-- Customer Data -->
+              <div class="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
+                <h4 class="font-bold text-brand-pink text-xs uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <app-icon name="user" size="14px"></app-icon> Dados do Cliente
+                </h4>
+                <div class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                  <p><span class="font-bold">Nome:</span> {{ selectedOrder.customerName }}</p>
+                  <p><span class="font-bold">CPF:</span> {{ selectedOrder.customerCpf || 'Não informado' }}</p>
+                  <p><span class="font-bold">Telefone:</span> {{ selectedOrder.customerPhone || 'Não informado' }}</p>
+                  <p><span class="font-bold">Email:</span> {{ selectedOrder.userEmail || 'Não informado' }}</p>
+                </div>
+              </div>
+
+              <!-- Shipping Data -->
+              <div class="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
+                <h4 class="font-bold text-brand-pink text-xs uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <app-icon name="map-pin" size="14px"></app-icon> Entrega
+                </h4>
+                <div class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                  @if (selectedOrder.shippingAddress) {
+                    <p>{{ selectedOrder.shippingAddress.street }}, {{ selectedOrder.shippingAddress.number }}</p>
+                    <p>{{ selectedOrder.shippingAddress.city }}</p>
+                    <p><span class="font-bold">CEP:</span> {{ selectedOrder.shippingAddress.cep }}</p>
+                  } @else {
+                    <p class="text-yellow-500">Endereço não registrado</p>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Items Table -->
+            <div class="mb-8">
+              <h4 class="font-bold text-gray-800 dark:text-white mb-4">Itens do Pedido</h4>
+              <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-700">
+                <table class="w-full text-sm text-left">
+                  <thead class="bg-gray-50 dark:bg-gray-800 text-xs uppercase text-gray-500">
+                    <tr>
+                      <th class="px-4 py-3">Produto</th>
+                      <th class="px-4 py-3 text-center">Qtd</th>
+                      <th class="px-4 py-3 text-right">Preço</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                    @for (item of selectedOrder.items; track item.id) {
+                      <tr class="bg-white dark:bg-brand-darksurface">
+                        <td class="px-4 py-3">
+                          <div class="flex items-center gap-3">
+                            <img [src]="item.image" class="w-10 h-10 rounded-lg object-cover border border-gray-100 dark:border-gray-600">
+                            <div>
+                              <p class="font-bold text-gray-800 dark:text-white line-clamp-1">{{ item.name }}</p>
+                              <p class="text-xs text-gray-500">{{ item.selectedSize }} • {{ item.selectedColor }}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-4 py-3 text-center font-bold">{{ item.quantity }}</td>
+                        <td class="px-4 py-3 text-right font-medium">R$ {{ item.price.toFixed(2) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                  <tfoot class="bg-gray-50 dark:bg-gray-800 font-bold text-gray-800 dark:text-white">
+                    <tr>
+                      <td colspan="2" class="px-4 py-3 text-right">Total</td>
+                      <td class="px-4 py-3 text-right text-brand-pink text-lg">R$ {{ selectedOrder.total.toFixed(2) }}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            <!-- Payment Info -->
+            <div class="flex justify-between items-center bg-green-50 dark:bg-green-900/20 p-4 rounded-2xl border border-green-100 dark:border-green-800 mb-6">
+               <div>
+                 <p class="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-wider">Pagamento</p>
+                 <p class="font-bold text-green-800 dark:text-green-300 text-lg capitalize">{{ selectedOrder.paymentMethod === 'card' ? 'Cartão de Crédito' : 'PIX' }}</p>
+               </div>
+               <div class="text-right">
+                 <p class="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-wider">Status</p>
+                 <span class="inline-block px-3 py-1 bg-white dark:bg-green-900/50 rounded-lg text-green-700 dark:text-green-300 font-bold text-sm shadow-sm border border-green-200 dark:border-green-800 mt-1">
+                   {{ getStatusLabel(selectedOrder.status) }}
+                 </span>
+               </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="grid grid-cols-2 gap-4">
+               <button (click)="printShippingLabel(selectedOrder)" class="flex items-center justify-center gap-2 py-4 bg-brand-dark dark:bg-white dark:text-brand-dark text-white rounded-xl font-bold hover:bg-black dark:hover:bg-gray-200 transition-colors shadow-lg">
+                 <app-icon name="truck" size="18px"></app-icon> Imprimir Etiqueta
+               </button>
+               <select (change)="updateOrderStatus(selectedOrder.id, $event)" class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-white rounded-xl px-4 font-bold outline-none focus:ring-2 focus:ring-brand-pink">
+                 <option value="" disabled selected>Atualizar Status</option>
+                 <option value="pending">🟡 Pendente</option>
+                 <option value="paid">🟢 Pago</option>
+                 <option value="shipped">🔵 Enviado</option>
+                 <option value="delivered">✅ Entregue</option>
+                 <option value="cancelled">🔴 Cancelado</option>
+               </select>
+            </div>
+
+          </div>
+        </div> 
+      }
+
+      <!-- FULLY RESTORED PRODUCT MODAL -->
+      @if (showProductModal) { 
+        <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div class="bg-white dark:bg-brand-darksurface rounded-3xl p-6 w-full max-w-4xl shadow-2xl relative animate-slide-up border border-gray-100 dark:border-gray-700 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Produto</h3>
+            <div class="space-y-6">
+              
+              <!-- Basic Info -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="md:col-span-2">
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Nome</label>
+                  <input type="text" [(ngModel)]="newProduct.name" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Preço</label>
+                  <input type="number" [(ngModel)]="newProduct.price" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Gênero</label>
+                  <select [(ngModel)]="newProduct.gender" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all cursor-pointer">
+                    <option value="girl">Menina</option>
+                    <option value="boy">Menino</option>
+                    <option value="unisex">Unissex</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Categoria</label>
+                  <select [(ngModel)]="newProduct.categoryId" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all cursor-pointer">
+                    @for(cat of store.categories(); track cat.id) {
+                      <option [value]="cat.id">{{ cat.name }}</option>
+                    }
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Estoque Total</label>
+                  <input type="number" [(ngModel)]="newProduct.stock" [disabled]="tempVariants.length > 0" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all disabled:opacity-50">
+                  @if (tempVariants.length > 0) { <span class="text-[10px] text-gray-400">Controlado pelas variantes</span> }
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Descrição</label>
+                  <textarea [(ngModel)]="newProduct.description" rows="3" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all"></textarea>
+                </div>
+              </div>
+
+              <!-- Media -->
+              <div class="border-t border-gray-100 dark:border-gray-700 pt-6">
+                 <h4 class="font-bold text-brand-dark dark:text-white mb-4">Mídia</h4>
+                 <div class="flex flex-col gap-4">
+                    <app-image-upload label="Imagem Principal" [currentImage]="newProduct.image" (imageSelected)="onProductImageSelected($event)" (fileSelected)="onProductFileSelected($event)"></app-image-upload>
+                    
+                    <div>
+                      <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Galeria Adicional</label>
+                      <div class="flex gap-2 flex-wrap">
+                        @for (img of newProduct.gallery; track img; let i = $index) {
+                          <div class="relative group w-24">
+                            <div class="w-24 h-24 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-100">
+                               <img [src]="img" class="w-full h-full object-cover">
+                            </div>
+                            
+                            <!-- Delete Button -->
+                            <button (click)="removeGalleryImage(i, img)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                              <app-icon name="trash" size="12px"></app-icon>
+                            </button>
+
+                            <!-- Color Linker (New Feature) -->
+                            <select [(ngModel)]="tempGalleryTags[img]" class="absolute bottom-0 left-0 right-0 text-[10px] w-full p-1 bg-white/90 dark:bg-black/80 backdrop-blur border-t border-gray-200 dark:border-gray-600 outline-none text-gray-800 dark:text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity rounded-b-lg">
+                               <option value="" disabled selected>Vincular Cor</option>
+                               <option [value]="null">Nenhuma</option>
+                               @for (c of getAvailableColors(); track c) {
+                                 <option [value]="c">{{ c }}</option>
+                               }
+                            </select>
+                            
+                            <!-- Badge if linked -->
+                            @if(tempGalleryTags[img]) {
+                               <div class="absolute bottom-1 left-1 bg-brand-pink text-white text-[9px] px-1.5 py-0.5 rounded font-bold shadow-sm pointer-events-none group-hover:opacity-0 transition-opacity">
+                                 {{ tempGalleryTags[img] }}
+                               </div>
+                            }
+                          </div>
+                        }
+                        
+                        <label class="w-24 h-24 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-brand-pink hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                          <input type="file" (change)="onGalleryImageSelected($event)" accept="image/*" hidden>
+                          <span class="text-2xl text-gray-400">+</span>
+                        </label>
+                      </div>
+                      <p class="text-[10px] text-gray-400 mt-2">Dica: Selecione a cor no menu da imagem para exibir a foto correta quando o cliente escolher a cor.</p>
+                    </div>
+
+                    <div>
+                       <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Vídeo (Opcional)</label>
+                       <input type="file" (change)="onVideoSelected($event)" accept="video/*" class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-brand-soft file:text-brand-pink hover:file:bg-brand-pink hover:file:text-white cursor-pointer">
+                       @if(newProduct.video) { <p class="text-xs text-green-500 mt-1 font-bold">Vídeo carregado!</p> }
+                    </div>
+                 </div>
+              </div>
+
+              <!-- Variants -->
+              <div class="border-t border-gray-100 dark:border-gray-700 pt-6">
+                 <h4 class="font-bold text-brand-dark dark:text-white mb-4">Estoque e Variantes</h4>
+                 
+                 <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl mb-4">
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Gerador Rápido</label>
+                    <div class="flex gap-2 mb-2">
+                      <input type="text" [(ngModel)]="tempSizes" placeholder="Tamanhos (ex: P, M, G)" class="flex-1 p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-white">
+                      <input type="text" [(ngModel)]="tempColors" placeholder="Cores (ex: Rosa, Azul)" class="flex-1 p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-white">
+                      <button (click)="generateVariants()" class="bg-brand-dark text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-black">Gerar</button>
+                    </div>
+                    <p class="text-[10px] text-gray-400">Separe por vírgula para criar combinações automáticas.</p>
+                 </div>
+
+                 @if (tempVariants.length > 0) {
+                   <table class="w-full text-sm text-left">
+                     <thead class="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-800">
+                       <tr><th class="p-2">Tamanho</th><th class="p-2">Cor</th><th class="p-2">Estoque</th><th class="p-2"></th></tr>
+                     </thead>
+                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                       @for (v of tempVariants; track $index) {
+                         <tr>
+                           <td class="p-2 font-bold dark:text-white">{{ v.size }}</td>
+                           <td class="p-2 dark:text-white">{{ v.color }}</td>
+                           <td class="p-2">
+                             <!-- FIX: Added bg-white and text-gray-900 for explicit light mode styling -->
+                             <input type="number" [(ngModel)]="v.stock" class="w-16 p-1 bg-white border border-gray-200 rounded text-center text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white font-bold">
+                           </td>
+                           <td class="p-2 text-right"><button (click)="removeVariant($index)" class="text-red-500 hover:text-red-700"><app-icon name="trash" size="14px"></app-icon></button></td>
+                         </tr>
+                       }
+                     </tbody>
+                   </table>
+                 }
+              </div>
+
+              <div class="flex gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-brand-darksurface z-10">
+                <button (click)="showProductModal = false" class="flex-1 py-3 font-bold rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 transition-colors">Cancelar</button>
+                <button (click)="saveProduct()" class="flex-1 py-3 bg-brand-pink text-white font-bold rounded-xl hover:bg-pink-600 transition-colors">Salvar Produto</button>
+              </div>
+            </div>
+          </div>
+        </div> 
+      }
+
+      <!-- UPDATED CATEGORY MODAL -->
+      @if (showCategoryModal) { 
+        <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div class="bg-white dark:bg-brand-darksurface rounded-3xl p-6 w-full max-w-md shadow-2xl relative animate-slide-up border border-gray-100 dark:border-gray-700">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Categoria</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Nome</label>
+                <input type="text" [(ngModel)]="newCategory.name" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+              </div>
+              <app-image-upload [currentImage]="newCategory.image" (imageSelected)="onCategoryImageSelected($event)" (fileSelected)="onCategoryFileSelected($event)"></app-image-upload>
+            </div>
+            <div class="flex gap-3 mt-8">
+              <button (click)="showCategoryModal = false" class="flex-1 py-3 font-bold rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 transition-colors">Cancelar</button>
+              <button (click)="saveCategory()" class="flex-1 py-3 bg-brand-pink text-white font-bold rounded-xl hover:bg-pink-600 transition-colors">Salvar</button>
+            </div>
+          </div>
+        </div> 
+      }
+
+      <!-- UPDATED BANNER MODAL -->
+      @if (showBannerModal) { 
+        <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div class="bg-white dark:bg-brand-darksurface rounded-3xl p-6 w-full max-w-lg shadow-2xl relative animate-slide-up border border-gray-100 dark:border-gray-700 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Banner</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Título</label>
+                <input type="text" [(ngModel)]="newBanner.title" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Subtítulo</label>
+                <input type="text" [(ngModel)]="newBanner.subtitle" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Link</label>
+                <select [(ngModel)]="newBanner.link" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all cursor-pointer">
+                  <option *ngFor="let r of bannerRoutes" [value]="r.value">{{ r.label }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Local</label>
+                <select [(ngModel)]="newBanner.location" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all cursor-pointer">
+                  <option value="home-hero">Home: Principal (Grande)</option>
+                  <option value="home-mid">Home: Promoção (Meio)</option>
+                  <option value="catalog-top">Catálogo: Topo</option>
+                  <option value="catalog-sidebar">Catálogo: Lateral</option>
+                </select>
+              </div>
+              <app-image-upload [currentImage]="newBanner.image!" (imageSelected)="onBannerImageSelected($event)" (fileSelected)="onBannerFileSelected($event)"></app-image-upload>
+            </div>
+            <div class="flex gap-3 mt-8">
+              <button (click)="showBannerModal = false" class="flex-1 py-3 font-bold rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 transition-colors">Cancelar</button>
+              <button (click)="saveBanner()" class="flex-1 py-3 bg-brand-pink text-white font-bold rounded-xl hover:bg-pink-600 transition-colors">Salvar</button>
+            </div>
+          </div>
+        </div> 
+      }
+
+      <!-- UPDATED COUPON MODAL -->
+      @if (showCouponModal) { 
+        <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div class="bg-white dark:bg-brand-darksurface rounded-3xl p-6 w-full max-w-md shadow-2xl relative animate-slide-up border border-gray-100 dark:border-gray-700">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Novo Cupom</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Código</label>
+                <input type="text" [(ngModel)]="newCoupon.code" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all font-bold uppercase" placeholder="EX: VERAO10">
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Tipo</label>
+                  <select [(ngModel)]="newCoupon.type" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all cursor-pointer">
+                    <option value="percent">% Porcentagem</option>
+                    <option value="fixed">R$ Fixo</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Valor</label>
+                  <input type="number" [(ngModel)]="newCoupon.value" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Mínimo Compra (R$)</label>
+                <input type="number" [(ngModel)]="newCoupon.minPurchase" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Descrição</label>
+                <input type="text" [(ngModel)]="newCoupon.description" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+              </div>
+            </div>
+            <div class="flex gap-3 mt-8">
+              <button (click)="showCouponModal = false" class="flex-1 py-3 font-bold rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 transition-colors">Cancelar</button>
+              <button (click)="saveCoupon()" class="flex-1 py-3 bg-brand-pink text-white font-bold rounded-xl hover:bg-pink-600 transition-colors">Salvar</button>
+            </div>
+          </div>
+        </div> 
+      }
+
+    </div>
+
+
+
+
+
+
+
+
+
+
