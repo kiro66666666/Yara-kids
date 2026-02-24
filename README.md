@@ -1,60 +1,88 @@
-
 # 🎀 YARA Kids - Moda Infantil
 
-Bem-vindo ao projeto **YARA Kids v3.2**, uma loja virtual completa desenvolvida com Angular moderno e TailwindCSS.
+Loja virtual YARA Kids em Angular + Tailwind.
 
-## 🚀 Como Executar o Projeto
+## 🚀 Como rodar
 
-Este projeto utiliza Angular v17+ (Standalone Components).
+```bash
+npm install
+npm start
+```
 
-### Opção 1: Visual Studio Code (Local)
+Acesse: `http://localhost:4200`
 
-1.  **Pré-requisitos**: Certifique-se de ter o [Node.js](https://nodejs.org/) instalado (v18 ou superior).
-2.  **Instale o Angular CLI** (se não tiver):
-    ```bash
-    npm install -g @angular/cli
-    ```
-3.  **Baixe/Clone este código** para uma pasta.
-4.  **Inicialize**: Como este é um código gerado via AI Studio (estrutura simplificada), você precisará criar um projeto Angular padrão e copiar os arquivos `src` para dentro dele.
-    ```bash
-    ng new yara-kids --style=css --routing --ssr=false
-    # Escolha 'Yes' para roteamento e 'CSS' para estilos.
-    ```
-5.  **Instale dependências**: O projeto usa Tailwind via CDN no `index.html` para facilitar o teste, mas você pode instalar via npm se preferir.
-6.  **Copie os arquivos**: Copie todo o conteúdo da pasta `src` gerada aqui para a pasta `src` do seu novo projeto Angular.
-7.  **Execute**:
-    ```bash
-    ng serve
-    ```
-8.  Acesse `http://localhost:4200`.
+## 🔐 Configuração de runtime (obrigatória para modo real)
 
-### Opção 2: StackBlitz (Online - Mais Fácil)
+O projeto lê chaves de integração via `window.__APP_CONFIG__` (arquivo `public/app-config.js`).
 
-1.  Acesse [StackBlitz](https://stackblitz.com/).
-2.  Crie um novo projeto **Angular**.
-3.  Copie e cole o conteúdo de cada arquivo fornecido nos respectivos arquivos do projeto online.
-4.  O projeto rodará automaticamente.
+Edite `public/app-config.js`:
 
-## 📱 Recursos Principais
+```js
+window.__APP_CONFIG__ = {
+  supabaseUrl: 'https://SEU-PROJETO.supabase.co',
+  supabaseAnonKey: 'SUA_ANON_KEY',
+  geminiApiKey: 'SUA_GEMINI_KEY'
+};
+```
 
-*   **Design Responsivo**: Mobile-first com TailwindCSS.
-*   **Gestão de Estado**: Usando Angular Signals (`store.service.ts`).
-*   **Carrinho & Checkout**: Fluxo completo com validação de estoque e cupom.
-*   **Painel Administrativo**:
-    *   Senha: `YaraAdmin@2026!`
-    *   Gestão de Produtos, Categorias e Pedidos.
-    *   Alternância entre Modo Visual (Dados Demo) e Modo Real.
-*   **Integrações**:
-    *   WhatsApp para finalizar compras.
-    *   Botão "Avise-me quando chegar".
-    *   Feed do Instagram simulado.
+> Não use senha/atalho de admin no frontend. O acesso admin é baseado em `role` do usuário autenticado no Supabase.
 
-## 📁 Estrutura de Pastas
+## ✅ Deploy
 
-*   `src/components`: Componentes reutilizáveis (Header, Footer, Cards).
-*   `src/pages`: Páginas principais (Home, Catálogo, Admin, Checkout).
-*   `src/services`: Lógica de negócio e estado global.
-*   `src/ui`: Elementos de UI base (ícones, etc).
+O build de produção é gerado com:
 
----
-*Desenvolvido para YARA Kids - Fevereiro 2026*
+```bash
+npm run build
+```
+
+Saída: `dist/yara-kids`
+
+
+## 🔁 Fluxo automático recomendado (work -> PR -> main -> Firebase)
+
+### 1) Trabalhar sempre na branch `work`
+Se o clone ainda não tiver a branch `work` (erro: `pathspec 'work' did not match`), crie e publique uma vez:
+
+```bash
+git checkout -b work
+git push -u origin work
+```
+
+Depois disso, use normalmente:
+
+```bash
+git checkout work
+git pull --rebase origin work
+```
+
+### 2) Fazer alterações e enviar para `work`
+```bash
+git add .
+git commit -m "feat: sua alteração"
+git push origin work
+```
+
+### 3) Abrir Pull Request no GitHub
+- Base: `main`
+- Compare: `work`
+- URL rápida: `https://github.com/kiro66666666/Yara-kids/compare/main...work`
+
+### 4) CI automática no PR
+Ao abrir PR para `main`, a Action roda build automático (job `ci`).
+
+### 5) Merge no GitHub
+Após aprovar PR e o CI passar, faça merge de `work` em `main`.
+
+### 6) Deploy automático no Firebase
+No push em `main`, a Action roda build + deploy (job `deploy`).
+
+## 🔐 Secrets que você precisa configurar no GitHub
+Vá em: **Settings > Secrets and variables > Actions > New repository secret**
+
+Crie estes secrets:
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `GEMINI_API_KEY`
+- `FIREBASE_TOKEN`
+
+Sem esses secrets, a Action pode falhar na etapa de build/deploy.

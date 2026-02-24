@@ -2,14 +2,19 @@
 import { Router, CanActivateFn } from '@angular/router';
 import { StoreService } from '../services/store.service';
 
+function resolveUserRole(dataUser: any): 'admin' | 'customer' {
+  const role = dataUser?.app_metadata?.role || dataUser?.user_metadata?.role;
+  return role === 'admin' ? 'admin' : 'customer';
+}
+
 function mapSupabaseUserToStore(dataUser: any) {
-  const isAdmin = dataUser?.email === 'admin@yarakids.com.br';
+  const role = resolveUserRole(dataUser);
   return {
     id: dataUser.id,
     email: dataUser.email,
     phone: dataUser.phone,
-    name: dataUser.user_metadata?.['full_name'] || dataUser.user_metadata?.['name'] || dataUser.email?.split('@')[0] || dataUser.phone || (isAdmin ? 'Administradora' : 'Cliente'),
-    role: isAdmin ? 'admin' as const : 'customer' as const
+    name: dataUser.user_metadata?.['full_name'] || dataUser.user_metadata?.['name'] || dataUser.email?.split('@')[0] || dataUser.phone || (role === 'admin' ? 'Administradora' : 'Cliente'),
+    role
   };
 }
 
@@ -50,7 +55,7 @@ export const adminGuard: CanActivateFn = () => {
   }
 
   return store.supabase.supabase.auth.getUser().then(({ data }) => {
-    if (data.user?.email === 'admin@yarakids.com.br') {
+    if (data.user && resolveUserRole(data.user) === 'admin') {
       store.user.set(mapSupabaseUserToStore(data.user));
       return true;
     }

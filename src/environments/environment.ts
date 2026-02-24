@@ -1,8 +1,12 @@
+const runtimeConfig = globalThis.window?.__APP_CONFIG__;
 
 export const environment = {
   production: false,
-  // IMPORTANTE: Substitua pela sua chave real do Google Gemini aqui para rodar localmente ou no Netlify
-  geminiApiKey: 'AIzaSyAOWjT59dGR34ZStoDCw8d43_TQH7z0GXc',
+  geminiApiKey: runtimeConfig?.geminiApiKey || '',
+  supabase: {
+    url: runtimeConfig?.supabaseUrl || '',
+    anonKey: runtimeConfig?.supabaseAnonKey || ''
+  },
   firebase: {
     config: {
       apiKey: 'AIzaSyAH_MV39FVnB42KnVFXfdr3GG2K8q5Qoac',
