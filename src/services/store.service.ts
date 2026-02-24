@@ -187,17 +187,17 @@ export interface InstagramPost {
 const DEFAULT_INSTITUTIONAL: Institutional = {
   logoUrl: '', 
   aboutTitle: 'Quem Somos',
-  aboutText: 'A YARA Kids nasceu do sonho de vestir criancas com a pureza e a alegria da infancia. Fundada em Redencao/PA, nossa loja busca trazer o que ha de mais moderno e confortavel na moda infantil.\n\nAcreditamos que roupa de crianca tem que ser alegre, colorida e permitir o movimento. Por isso, selecionamos cada peca com muito carinho.',
+  aboutText: 'A YARA Kids nasceu do sonho de vestir crianças com a pureza e a alegria da infância. Fundada em Redenção/PA, nossa loja busca trazer o que há de mais moderno e confortável na moda infantil.\n\nAcreditamos que roupa de criança tem que ser alegre, colorida e permitir o movimento. Por isso, selecionamos cada peça com muito carinho.',
   aboutImage: 'https://images.unsplash.com/photo-1621452773781-0f992ee03591?w=800&fit=crop',
-  privacyText: '1. DADOS COLETADOS\nColetamos: nome, email, CPF, endereco, telefone para processamento de pedidos.\n\n2. USO DOS DADOS\nUsamos seus dados para processar pedidos e enviar notificacoes.\n\n3. COMPARTILHAMENTO\nNao vendemos seus dados. Compartilhamos apenas com transportadoras.',
-  termsText: '1. ACEITACAO\nAo usar o site YARA Kids, voce concorda com estes termos.\n\n2. PRODUTOS\nAs imagens sao ilustrativas. Cores podem variar.\n\n3. PRECOS\nSujeitos a alteracao sem aviso previo.',
-  exchangePolicyText: 'Voce tem 7 dias para devolucao por arrependimento e 30 dias para troca por defeito ou tamanho. O produto deve estar com a etiqueta.',
+  privacyText: '1. DADOS COLETADOS\nColetamos: nome, e-mail, CPF, endereço e telefone para processamento de pedidos.\n\n2. USO DOS DADOS\nUsamos seus dados para processar pedidos e enviar notificações.\n\n3. COMPARTILHAMENTO\nNão vendemos seus dados. Compartilhamos apenas com transportadoras.',
+  termsText: '1. ACEITAÇÃO\nAo usar o site YARA Kids, você concorda com estes termos.\n\n2. PRODUTOS\nAs imagens são ilustrativas. Cores podem variar.\n\n3. PREÇOS\nSujeitos a alteração sem aviso prévio.',
+  exchangePolicyText: 'Você tem 7 dias para devolução por arrependimento e 30 dias para troca por defeito ou tamanho. O produto deve estar com a etiqueta.',
   whatsapp: '(94) 99133-4401',
   email: 'contato@yarakids.com.br',
-  address: 'Redencao, PA - Brasil',
-  instagramUrl: 'https://instagram.com/yarakids_moda_infatil',
-  consentTitle: 'Sua Privacidade e Importante',
-  consentText: 'Para garantir uma experiencia segura e salvar suas compras, precisamos que voce concorde com nossos termos. Ao continuar, voce aceita nossa Politica de Privacidade e Termos de Uso.',
+  address: 'Redenção, PA - Brasil',
+  instagramUrl: 'https://instagram.com/yarakids_moda_infantil',
+  consentTitle: 'Sua Privacidade é Importante',
+  consentText: 'Para garantir uma experiência segura e salvar suas compras, precisamos que você concorde com nossos termos. Ao continuar, você aceita nossa Política de Privacidade e Termos de Uso.',
   mercadoPagoPublicKey: '',
   mercadoPagoAccessToken: '',
   pixKey: '00.000.000/0001-00'
@@ -206,7 +206,7 @@ const DEFAULT_INSTITUTIONAL: Institutional = {
 const MOCK_CATEGORIES: Category[] = [
   { id: 'cat-1', name: 'Vestidos', slug: 'vestidos', image: 'https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?w=600&q=80' },
   { id: 'cat-2', name: 'Conjuntos', slug: 'conjuntos', image: 'https://images.unsplash.com/photo-1519238263496-6361937a42d8?w=600&q=80' },
-  { id: 'cat-3', name: 'Acessorios', slug: 'acessorios', image: 'https://images.unsplash.com/photo-1617331530973-2dc7463f27a6?w=600&q=80' },
+  { id: 'cat-3', name: 'Acessórios', slug: 'acessorios', image: 'https://images.unsplash.com/photo-1617331530973-2dc7463f27a6?w=600&q=80' },
   { id: 'cat-4', name: 'Maternidade', slug: 'maternidade', image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&q=80' }
 ];
 
@@ -247,7 +247,7 @@ const MOCK_PRODUCTS: Product[] = [
     reviews: 124,
     isNew: true,
     isBestSeller: true,
-    description: 'Vestido perfeito para festas de verao, tecido leve e respiravel com estampa floral delicada.'
+    description: 'Vestido perfeito para festas de verão, tecido leve e respirável com estampa floral delicada.'
   },
   {
     id: 'demo-2',
@@ -268,13 +268,13 @@ const MOCK_PRODUCTS: Product[] = [
     reviews: 56,
     isNew: true,
     isBestSeller: false,
-    description: 'Conjunto confortavel de algodo para os pequenos exploradores brincarem a vontade.'
+    description: 'Conjunto confortável de algodão para os pequenos exploradores brincarem à vontade.'
   }
 ];
 
 const MOCK_REVIEWS: Review[] = [
-  { id: 'r1', productId: 'demo-1', user: 'Ana Paula', date: '12/02/2026', rating: 5, comment: 'Amei o tecido! Minha filha nao quer tirar mais.', image: 'https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?w=100&q=80' },
-  { id: 'r2', productId: 'demo-1', user: 'Marcos Silva', date: '10/02/2026', rating: 4, comment: 'Chegou super rapido, o tamanho ficou perfeito.' }
+  { id: 'r1', productId: 'demo-1', user: 'Ana Paula', date: '12/02/2026', rating: 5, comment: 'Amei o tecido! Minha filha não quer tirar mais.', image: 'https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?w=100&q=80' },
+  { id: 'r2', productId: 'demo-1', user: 'Marcos Silva', date: '10/02/2026', rating: 4, comment: 'Chegou super rápido, o tamanho ficou perfeito.' }
 ];
 
 const FUTURE_DATE = new Date();
@@ -285,7 +285,7 @@ const MOCK_BANNERS: Banner[] = [
     id: 'b1',
     location: 'home-hero',
     image: 'https://images.unsplash.com/photo-1603569283847-aa295f0d016a?w=1800&q=85',
-    title: 'Nova Colecao',
+    title: 'Nova Coleção',
     subtitle: 'Estilo e conforto',
     link: '/catalogo'
   },
@@ -294,7 +294,7 @@ const MOCK_BANNERS: Banner[] = [
     location: 'home-mid',
     image: 'https://images.unsplash.com/photo-1604467794349-0b74285de7e7?w=1200&q=80',
     title: 'Looks Completos',
-    subtitle: 'Praticidade para mamaes',
+    subtitle: 'Praticidade para mamães',
     description: 'Aproveite descontos exclusivos. Vestidos e conjuntos dignos de princesa!',
     badgeText: 'Tempo Limitado',
     endDate: FUTURE_DATE.toISOString(),
@@ -305,18 +305,18 @@ const MOCK_BANNERS: Banner[] = [
 const MOCK_COUPONS: Coupon[] = [
   { id: '1', code: 'BEMVINDA10', type: 'percent', value: 10, minPurchase: 0, active: true, description: '10% de desconto para novos clientes' },
   { id: '2', code: 'YARA20', type: 'fixed', value: 20, minPurchase: 100, active: true, description: 'R$ 20 OFF em compras acima de R$ 100' },
-  { id: '3', code: 'FRETEGRATIS', type: 'shipping', value: 0, minPurchase: 50, active: true, description: 'Frete Gratis para todo Brasil' }
+  { id: '3', code: 'FRETEGRATIS', type: 'shipping', value: 0, minPurchase: 50, active: true, description: 'Frete grátis para todo Brasil' }
 ];
 
 const MOCK_FAQS: FaqItem[] = [
   { id: '1', question: 'Quanto tempo demora a entrega?', answer: 'O prazo varia conforme o CEP e a modalidade escolhida (PAC ou SEDEX).' },
-  { id: '2', question: 'Quais as formas de pagamento?', answer: 'Aceitamos PIX, cartao de credito e boleto.' },
-  { id: '3', question: 'Posso trocar se nao servir?', answer: 'Sim. A primeira troca e gratis dentro do prazo da politica de trocas.' }
+  { id: '2', question: 'Quais as formas de pagamento?', answer: 'Aceitamos PIX, cartão de crédito e boleto.' },
+  { id: '3', question: 'Posso trocar se não servir?', answer: 'Sim. A primeira troca é grátis dentro do prazo da política de trocas.' }
 ];
 
 const MOCK_FEEDBACKS: Feedback[] = [
-  { id: '1', name: 'Maria Souza', rating: 5, message: 'Amei as roupinhas! Chegou rapido.', date: '15/02/2026' },
-  { id: '2', name: 'Joao Paulo', rating: 4, message: 'Qualidade otima, atendimento muito bom.', date: '10/02/2026' }
+  { id: '1', name: 'Maria Souza', rating: 5, message: 'Amei as roupinhas! Chegou rápido.', date: '15/02/2026' },
+  { id: '2', name: 'João Paulo', rating: 4, message: 'Qualidade ótima, atendimento muito bom.', date: '10/02/2026' }
 ];
 
 const TODAY_STR = new Date().toLocaleDateString('pt-BR'); // Format: dd/mm/yyyy
@@ -328,7 +328,7 @@ const MOCK_ORDERS: Order[] = [
         { ...MOCK_PRODUCTS[0], selectedSize: '6', selectedColor: 'Rosa', quantity: 2 } as CartItem
     ], 
     paymentMethod: 'pix',
-    customerCpf: '123.456.789-00', customerPhone: '(94) 99999-9999', shippingAddress: { cep: '68550-000', street: 'Av. Brasil', number: '120', city: 'Redencao - PA' } 
+    customerCpf: '123.456.789-00', customerPhone: '(94) 99999-9999', shippingAddress: { cep: '68550-000', street: 'Av. Brasil', number: '120', city: 'Redenção - PA' } 
   },
   { 
     id: '9820', date: TODAY_STR, status: 'pending', total: 69.9, customerName: 'Bruno Silva', 
@@ -358,7 +358,7 @@ export class StoreService {
   notifications = inject(NotificationService);
 
   // --- State ---
-  mode = signal<'visual' | 'real'>('visual');
+  mode = signal<'visual' | 'real'>('real');
   theme = signal<'light' | 'dark'>('light');
   animationsEnabled = signal<boolean>(true); 
   
@@ -736,7 +736,7 @@ export class StoreService {
       console.error(`Erro ao carregar ${context} (${table})`, e);
       if (isMissingTable && showToastOnMissing && !this.missingTableWarnings.has(table)) {
         this.missingTableWarnings.add(table);
-        this.showToast(`Tabela '${table}' nao existe no banco ainda. Usando fallback.`, 'info');
+        this.showToast(`Tabela '${table}' não existe no banco ainda. Usando fallback.`, 'info');
       }
       return fallback;
     }
@@ -957,7 +957,7 @@ export class StoreService {
         console.error('Erro ao salvar feedback', e);
       }
     }
-    this.showToast('Avaliacao enviada. Obrigado!', 'success');
+    this.showToast('Avaliação enviada. Obrigado!', 'success');
   }
 
   async subscribeNewsletter(email: string): Promise<NewsletterSubscribeResult> {
@@ -965,14 +965,14 @@ export class StoreService {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(normalizedEmail)) {
-      return { ok: false, status: 'invalid_email', message: 'Digite um e-mail valido.' };
+      return { ok: false, status: 'invalid_email', message: 'Digite um e-mail válido.' };
     }
 
     if (this.mode() !== 'real') {
       return {
         ok: true,
         status: 'visual_mode',
-        message: 'Modo visual: inscricao simulada com sucesso.'
+        message: 'Modo visual: inscrição simulada com sucesso.'
       };
     }
 
@@ -986,7 +986,7 @@ export class StoreService {
         return {
           ok: true,
           status: response.status === 'already_exists' ? 'already_exists' : 'mail_sent',
-          message: response.message || 'Inscricao confirmada! Verifique seu e-mail.'
+          message: response.message || 'Inscrição confirmada! Verifique seu e-mail.'
         };
       }
 
@@ -994,7 +994,7 @@ export class StoreService {
         return {
           ok: true,
           status: 'already_exists',
-          message: response.message || 'Este e-mail ja est cadastrado.'
+          message: response.message || 'Este e-mail já está cadastrado.'
         };
       }
 
@@ -1009,14 +1009,14 @@ export class StoreService {
       return {
         ok: false,
         status: 'error',
-        message: response?.message || 'Nao foi possivel concluir sua inscricao agora.'
+        message: response?.message || 'Não foi possível concluir sua inscrição agora.'
       };
     } catch (e) {
       console.error('Erro ao inscrever newsletter', e);
       return {
         ok: false,
         status: 'error',
-        message: 'Falha de conexao ao cadastrar newsletter.'
+        message: 'Falha de conexão ao cadastrar newsletter.'
       };
     }
   }
@@ -1276,14 +1276,14 @@ export class StoreService {
                   if(error) throw error;
               }
               
-              this.showToast(`Codigo enviado para seu ${type === 'sms' ? 'celular' : 'e-mail'}!`, 'success');
+              this.showToast(`Código enviado para seu ${type === 'sms' ? 'celular' : 'e-mail'}!`, 'success');
               return true;
           } catch(e: any) {
-              this.showToast('Erro ao enviar cdigo: ' + e.message, 'error');
+              this.showToast('Erro ao enviar código: ' + e.message, 'error');
               return false;
           }
       } else {
-          this.showToast(`Codigo 123456 enviado para ${contact} (Visual)`, 'success');
+          this.showToast(`Código 123456 enviado para ${contact} (Visual)`, 'success');
           return true;
       }
   }
@@ -1314,14 +1314,14 @@ export class StoreService {
       return true;
     } catch (e: any) {
       console.error('Erro ao verificar OTP', e);
-      this.showToast('Codigo invalido ou expirado.', 'error');
+      this.showToast('Código inválido ou expirado.', 'error');
       return false;
     }
   }
 
   private verifyOtpVisual(contact: string, token: string, type: 'sms' | 'email'): boolean {
     if (token !== '123456') {
-      this.showToast('Codigo incorreto (Use 123456)', 'error');
+      this.showToast('Código incorreto (Use 123456)', 'error');
       return false;
     }
 
@@ -1347,7 +1347,7 @@ export class StoreService {
     }
     this.user.set(null);
     localStorage.removeItem('admin_token');
-    this.showToast('Voce saiu da conta', 'info');
+    this.showToast('Você saiu da conta', 'info');
   }
 
   async addProduct(product: Product) {
@@ -1549,10 +1549,10 @@ export class StoreService {
   validateCoupon(code: string) {
     const coupon = this.coupons().find(c => c.code === code && c.active);
     if (!coupon) {
-      return { valid: false, discount: 0, message: 'Cupom invalido' };
+      return { valid: false, discount: 0, message: 'Cupom inválido' };
     }
     if (this.cartTotal() < coupon.minPurchase) {
-      return { valid: false, discount: 0, message: `Minimo de R$ ${coupon.minPurchase} para este cupom` };
+      return { valid: false, discount: 0, message: `Mínimo de R$ ${coupon.minPurchase} para este cupom` };
     }
 
     let discount = 0;
@@ -1641,9 +1641,6 @@ export class StoreService {
     this.showToast('Obrigado pela sua avaliacao!', 'success');
   }
 }
-
-
-
 
 
 

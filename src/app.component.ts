@@ -32,7 +32,7 @@ import { CommonModule } from '@angular/common'; // Added CommonModule for the ba
     <!-- Offline Banner -->
     @if (!isOnline()) {
       <div class="bg-red-500 text-white text-center py-2 text-xs font-bold fixed top-0 left-0 right-0 z-[100] animate-slide-up">
-        Voce esta offline. Verifique sua conexao.
+        Você está offline. Verifique sua conexão.
       </div>
     }
 
