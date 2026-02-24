@@ -28,6 +28,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
+    window.__APP_CONFIG__ = window.__APP_CONFIG__ || {};
+  </script>
+  <script src="/app-config.js"></script>
+  <script>
     // Check local storage or system preference immediately to prevent flash
     if (localStorage.getItem('yarakids_theme') === 'dark' || (!('yarakids_theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');

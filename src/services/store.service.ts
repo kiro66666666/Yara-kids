@@ -277,6 +277,23 @@ const MOCK_REVIEWS: Review[] = [
   { id: 'r2', productId: 'demo-1', user: 'Marcos Silva', date: '10/02/2026', rating: 4, comment: 'Chegou super rápido, o tamanho ficou perfeito.' }
 ];
 
+
+function resolveUserRole(dataUser: any): 'admin' | 'customer' {
+  const role = dataUser?.app_metadata?.role || dataUser?.user_metadata?.role;
+  return role === 'admin' ? 'admin' : 'customer';
+}
+
+function mapSupabaseUser(dataUser: any): User {
+  const role = resolveUserRole(dataUser);
+  return {
+    id: dataUser.id,
+    email: dataUser.email,
+    phone: dataUser.phone,
+    name: dataUser.user_metadata?.['full_name'] || dataUser.user_metadata?.['name'] || dataUser.email?.split('@')[0] || dataUser.phone || (role === 'admin' ? 'Administradora' : 'Cliente'),
+    role
+  };
+}
+
 const FUTURE_DATE = new Date();
 FUTURE_DATE.setHours(FUTURE_DATE.getHours() + 48);
 
@@ -553,27 +570,13 @@ export class StoreService {
 
     this.supabase.supabase.auth.getUser().then(({ data }) => {
       if (!data.user) return;
-      const isAdmin = data.user.email === 'admin@yarakids.com.br';
-      this.user.set({
-        id: data.user.id,
-        email: data.user.email,
-        phone: data.user.phone,
-        name: data.user.user_metadata?.['name'] || data.user.email?.split('@')[0] || data.user.phone || 'Cliente',
-        role: isAdmin ? 'admin' : 'customer'
-      });
+      this.user.set(mapSupabaseUser(data.user));
       this.notifications.initialize({ id: data.user.id, email: data.user.email || undefined });
     });
 
     this.supabase.supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        const isAdmin = session.user.email === 'admin@yarakids.com.br';
-        this.user.set({
-          id: session.user.id,
-          email: session.user.email,
-          phone: session.user.phone,
-          name: session.user.user_metadata?.['full_name'] || session.user.email?.split('@')[0] || session.user.phone || 'Cliente',
-          role: isAdmin ? 'admin' : 'customer'
-        });
+        this.user.set(mapSupabaseUser(session.user));
         this.notifications.initialize({ id: session.user.id, email: session.user.email || undefined });
         this.loadData();
       } else if (event === 'SIGNED_OUT') {
@@ -1052,10 +1055,6 @@ export class StoreService {
     }
   }
 
-  async verifyAdminPassword(password: string): Promise<boolean> {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      return password === 'YaraAdmin@2026!';
-  }
 
   // --- Order Actions ---
   async createOrder(data: { 
@@ -1161,7 +1160,7 @@ export class StoreService {
           id: 'u-' + Date.now(),
           name: email.split('@')[0],
           email: email,
-          role: email.includes('admin') ? 'admin' : 'customer'
+          role: 'customer'
         };
         this.user.set(newUser);
         this.showToast(`Bem-vindo, ${newUser.name}!`, 'success');
@@ -1346,7 +1345,6 @@ export class StoreService {
         this.supabase.supabase.auth.signOut();
     }
     this.user.set(null);
-    localStorage.removeItem('admin_token');
     this.showToast('Você saiu da conta', 'info');
   }
 

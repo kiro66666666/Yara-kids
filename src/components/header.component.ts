@@ -1,4 +1,4 @@
-﻿import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+﻿import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, Router } from '@angular/router';
 import { StoreService } from '../services/store.service';
 import { IconComponent } from '../ui/icons';
@@ -32,7 +32,7 @@ import { FormsModule } from '@angular/forms';
           <app-icon name="menu"></app-icon>
         </button>
 
-        <div class="flex items-center justify-center cursor-pointer group select-none flex-shrink-0 overflow-visible pl-1" (click)="handleLogoClick()">
+        <a routerLink="/" class="flex items-center justify-center cursor-pointer group select-none flex-shrink-0 overflow-visible pl-1">
           @if (store.institutional().logoUrl) {
             <img [src]="store.institutional().logoUrl" alt="YARA Kids" class="h-10 md:h-16 max-w-[180px] w-auto object-contain object-left transform group-hover:scale-105 transition-transform">
           } @else {
@@ -48,7 +48,7 @@ import { FormsModule } from '@angular/forms';
               </div>
             </div>
           }
-        </div>
+        </a>
 
         <div class="hidden lg:flex flex-1 max-w-xl mx-auto relative group">
           <input
@@ -208,33 +208,6 @@ import { FormsModule } from '@angular/forms';
       </div>
     }
 
-    @if (showAdminModal) {
-      <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-        <div class="bg-white dark:bg-brand-darksurface rounded-3xl p-8 w-full max-w-sm shadow-2xl transform scale-100 transition-all border border-gray-100 dark:border-gray-700">
-           <div class="text-center mb-6">
-             <div class="w-16 h-16 bg-brand-soft dark:bg-brand-lilac/20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-inner">🔐</div>
-             <h3 class="text-xl font-bold text-brand-dark dark:text-white">Acesso Restrito</h3>
-             <p class="text-xs text-gray-400 mt-1">Painel Administrativo YARA Kids</p>
-           </div>
-
-           <input type="password" [(ngModel)]="adminPassword" placeholder="Senha"
-             class="w-full p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl mb-4 focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/20 outline-none text-center font-bold tracking-widest transition-all text-gray-800 dark:text-white placeholder-gray-400">
-
-           @if (adminError) {
-             <div class="bg-red-50 dark:bg-red-900/20 text-red-500 text-xs text-center mb-4 font-bold py-2 rounded-lg border border-red-100 dark:border-red-800">
-               {{ adminError }}
-             </div>
-           }
-
-           <div class="flex flex-col gap-3">
-             <button (click)="verifyAdmin()" [disabled]="isLoading" class="w-full py-3 bg-brand-dark dark:bg-black text-white font-bold rounded-xl hover:bg-black dark:hover:bg-gray-800 transition-transform hover:scale-[1.02] shadow-lg disabled:opacity-70 disabled:cursor-not-allowed">
-               {{ isLoading ? 'Verificando...' : 'Entrar' }}
-             </button>
-             <button (click)="showAdminModal = false; adminPassword = ''" class="w-full py-3 text-gray-400 font-medium text-sm hover:text-gray-600 dark:hover:text-gray-200">Cancelar</button>
-           </div>
-        </div>
-      </div>
-    }
   `,
   styles: [`
     @keyframes bump {
@@ -253,12 +226,6 @@ export class HeaderComponent {
   router = inject(Router);
 
   isMenuOpen = false;
-  clicks = 0;
-  clickTimer: any;
-  showAdminModal = false;
-  adminPassword = '';
-  adminError = '';
-  isLoading = false;
   searchTerm = '';
 
   toggleMenu() {
@@ -269,42 +236,6 @@ export class HeaderComponent {
     if (this.searchTerm.trim()) {
       this.router.navigate(['/catalogo'], { queryParams: { search: this.searchTerm } });
       this.isMenuOpen = false;
-    }
-  }
-
-  handleLogoClick() {
-    this.clicks++;
-    clearTimeout(this.clickTimer);
-    this.clickTimer = setTimeout(() => this.clicks = 0, 2000);
-    if (this.clicks === 5) {
-      this.clicks = 0;
-      this.store.user()?.role === 'admin' ? this.router.navigate(['/admin']) : this.showAdminModal = true;
-    } else {
-      if (this.clicks === 1) this.router.navigate(['/']);
-    }
-  }
-
-  async verifyAdmin() {
-    this.isLoading = true;
-    this.adminError = '';
-
-    try {
-      const isValid = await this.store.verifyAdminPassword(this.adminPassword);
-
-      if (isValid) {
-        const adminUser = { id: 'admin-1', name: 'Administradora', email: 'admin@yarakids.com.br', role: 'admin' as const };
-        this.store.user.set(adminUser);
-        localStorage.setItem('yarakids_user', JSON.stringify(adminUser));
-        this.showAdminModal = false;
-        this.adminPassword = '';
-        this.router.navigate(['/admin']);
-      } else {
-        this.adminError = 'Senha incorreta';
-      }
-    } catch (e) {
-      this.adminError = 'Erro ao verificar senha';
-    } finally {
-      this.isLoading = false;
     }
   }
 
