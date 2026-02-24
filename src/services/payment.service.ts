@@ -1,5 +1,6 @@
 ﻿
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { SupabaseService } from './supabase.service';
 
 export interface InstallmentOption {
   count: number;
@@ -9,10 +10,31 @@ export interface InstallmentOption {
   label: string;
 }
 
+export interface PaymentRequest {
+  method: 'pix' | 'card';
+  amount: number;
+  installments: number;
+  idempotencyKey: string;
+  customer: {
+    name: string;
+    cpf: string;
+    phone?: string;
+  };
+}
+
+export interface PaymentResult {
+  success: boolean;
+  id: string;
+  status?: string;
+  qrCode?: string;
+  qrCodeBase64?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class PaymentService {
+  private supabase = inject(SupabaseService);
   
   // Configurações da Loja (Isso viria do backend no futuro)
   private config = {
@@ -64,20 +86,22 @@ export class PaymentService {
   }
 
   /**
-   * Simula o processamento do pagamento com o Mercado Pago
+   * Processa o pagamento via Edge Function (backend), com idempotência.
    */
-  async processPayment(data: any): Promise<{ success: boolean; id: string }> {
-    // Aqui entraria a chamada real para o seu Backend -> Mercado Pago
-    console.log('Enviando dados para processamento:', data);
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          id: Math.floor(Math.random() * 1000000000).toString()
-        });
-      }, 2000); // Simula delay de rede de 2 segundos
-    });
+  async processPayment(data: PaymentRequest): Promise<PaymentResult> {
+    const response = await this.supabase.callFunction('process-payment', data);
+
+    if (!response?.ok) {
+      throw new Error(response?.message || 'Falha ao processar pagamento.');
+    }
+
+    return {
+      success: true,
+      id: String(response.paymentId || response.id || Date.now()),
+      status: response.status,
+      qrCode: response.qrCode,
+      qrCodeBase64: response.qrCodeBase64
+    };
   }
 }
 

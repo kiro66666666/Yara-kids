@@ -75,9 +75,9 @@ function mapTitle(eventType: string, payload: Record<string, any>) {
     case 'contact_message_created':
       return `Nova mensagem de contato`;
     case 'promotion_created':
-      return `Nova promoÁ„o disponÌvel`;
+      return `Nova promo√ß√£o dispon√≠vel`;
     default:
-      return 'AtualizaÁ„o YARA Kids';
+      return 'Atualiza√ß√£o YARA Kids';
   }
 }
 
@@ -88,11 +88,11 @@ function mapBody(eventType: string, payload: Record<string, any>) {
     case 'order_status_changed':
       return `Novo status: ${payload.status || 'atualizado'}.`;
     case 'product_restocked':
-      return `O item ${payload.productName || ''} est· disponÌvel novamente.`;
+      return `O item ${payload.productName || ''} est√° dispon√≠vel novamente.`;
     case 'contact_message_created':
       return `Assunto: ${payload.subject || 'Contato da loja'}`;
     case 'promotion_created':
-      return `${payload.code || 'PromoÁ„o'} disponÌvel agora.`;
+      return `${payload.code || 'Promo√ß√£o'} dispon√≠vel agora.`;
     default:
       return 'Confira as novidades no app.';
   }
