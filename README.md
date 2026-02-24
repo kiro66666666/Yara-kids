@@ -36,3 +36,44 @@ npm run build
 ```
 
 Saída: `dist/yara-kids`
+
+
+## 🔁 Fluxo automático recomendado (work -> PR -> main -> Firebase)
+
+### 1) Trabalhar sempre na branch `work`
+```bash
+git checkout work
+git pull --rebase origin work
+```
+
+### 2) Fazer alterações e enviar para `work`
+```bash
+git add .
+git commit -m "feat: sua alteração"
+git push origin work
+```
+
+### 3) Abrir Pull Request no GitHub
+- Base: `main`
+- Compare: `work`
+- URL rápida: `https://github.com/kiro66666666/Yara-kids/compare/main...work`
+
+### 4) CI automática no PR
+Ao abrir PR para `main`, a Action roda build automático (job `ci`).
+
+### 5) Merge no GitHub
+Após aprovar PR e o CI passar, faça merge de `work` em `main`.
+
+### 6) Deploy automático no Firebase
+No push em `main`, a Action roda build + deploy (job `deploy`).
+
+## 🔐 Secrets que você precisa configurar no GitHub
+Vá em: **Settings > Secrets and variables > Actions > New repository secret**
+
+Crie estes secrets:
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `GEMINI_API_KEY`
+- `FIREBASE_TOKEN`
+
+Sem esses secrets, a Action pode falhar na etapa de build/deploy.
