@@ -295,7 +295,7 @@ export class CheckoutComponent {
   tracking = inject(TrackingService);
   router = inject(Router);
   
-  paymentMethod = 'pix';
+  paymentMethod: 'pix' | 'card' = 'pix';
   customerName = '';
   customerPhone = '';
   customerCpf = '';
@@ -346,6 +346,8 @@ export class CheckoutComponent {
   }
 
   async finishOrder() {
+    if (this.processingPayment) return;
+
     // Basic Validation
     if (!this.customerName || !this.customerCpf || !this.address) {
         this.store.showToast('Preencha todos os dados de entrega', 'error');
@@ -362,26 +364,17 @@ export class CheckoutComponent {
 
     this.processingPayment = true;
 
-    // --- CHECK API CONFIGURATION ---
-    const settings = this.store.institutional();
-    // Validamos se existe pelo menos o AccessToken (chave privada crítica)
-    const hasApiConfig = !!settings.mercadoPagoAccessToken && settings.mercadoPagoAccessToken.length > 10;
-
-    // Se NÃO tiver API configurada, vai direto pro ZAP
-    if (!hasApiConfig) {
-       console.warn('API Mercado Pago não configurada. Redirecionando para WhatsApp.');
-       await this.finalizeViaWhatsApp();
-       this.processingPayment = false;
-       return;
-    }
-
-    // Se TIVER API, tenta processar
     try {
         await this.paymentService.processPayment({
             method: this.paymentMethod,
             amount: this.paymentMethod === 'card' && this.selectedInstallment ? this.selectedInstallment.total : this.store.finalPrice(),
             installments: this.selectedInstallment ? this.selectedInstallment.count : 1,
-            card: this.paymentMethod === 'card' ? { ...this.cardData } : null
+            idempotencyKey: this.generateIdempotencyKey(),
+            customer: {
+              name: this.customerName,
+              cpf: this.customerCpf,
+              phone: this.customerPhone
+            },
         });
 
         // SUCCESS: Create Local Order
@@ -461,6 +454,15 @@ Aguardo a chave PIX ou link de pagamento!
     this.viaWhatsapp = true;
     this.orderComplete = true;
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+
+  private generateIdempotencyKey() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+
+    return `checkout-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   }
 
   goHome() {

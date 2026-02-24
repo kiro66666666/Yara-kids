@@ -3,7 +3,8 @@ import { Router, CanActivateFn } from '@angular/router';
 import { StoreService } from '../services/store.service';
 
 function mapSupabaseUserToStore(dataUser: any) {
-  const isAdmin = dataUser?.email === 'admin@yarakids.com.br';
+  const role = dataUser?.app_metadata?.['role'] || dataUser?.user_metadata?.['role'];
+  const isAdmin = role === 'admin';
   return {
     id: dataUser.id,
     email: dataUser.email,
@@ -50,7 +51,8 @@ export const adminGuard: CanActivateFn = () => {
   }
 
   return store.supabase.supabase.auth.getUser().then(({ data }) => {
-    if (data.user?.email === 'admin@yarakids.com.br') {
+    const role = data.user?.app_metadata?.['role'] || data.user?.user_metadata?.['role'];
+    if (role === 'admin') {
       store.user.set(mapSupabaseUserToStore(data.user));
       return true;
     }

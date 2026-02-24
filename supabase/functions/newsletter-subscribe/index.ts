@@ -37,10 +37,23 @@ serve(async (req) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(email)) {
-      return json({ ok: false, status: "invalid_email", message: "Digite um e-mail v�lido." }, 400);
+      return json({ ok: false, status: "invalid_email", message: "Digite um e-mail válido." }, 400);
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const rate = await enforceRateLimit(supabase, {
+      bucket: "newsletter_subscribe",
+      key: ip,
+      limit: 20,
+      windowMinutes: 10
+    });
+
+    if (!rate.allowed) {
+      return json({ ok: false, message: "Muitas tentativas. Tente novamente em instantes." }, 429);
+    }
+
 
     const { data: existing } = await supabase
       .from("newsletter_subscribers")
@@ -52,7 +65,7 @@ serve(async (req) => {
       return json({
         ok: true,
         status: "already_exists",
-        message: "Este e-mail j� est� cadastrado na newsletter."
+        message: "Este e-mail já está cadastrado na newsletter."
       });
     }
 
@@ -68,7 +81,7 @@ serve(async (req) => {
       return json({
         ok: false,
         status: "error",
-        message: "N�o foi poss�vel salvar sua inscri��o agora.",
+        message: "Não foi possível salvar sua inscrição agora.",
         detail: insertError.message
       }, 500);
     }
@@ -77,7 +90,7 @@ serve(async (req) => {
       return json({
         ok: false,
         status: "mail_failed",
-        message: "E-mail salvo, mas o envio est� temporariamente indispon�vel (RESEND_API_KEY ausente)."
+        message: "E-mail salvo, mas o envio está temporariamente indisponível (RESEND_API_KEY ausente)."
       }, 500);
     }
 
@@ -90,18 +103,58 @@ serve(async (req) => {
       body: JSON.stringify({
         from: RESEND_FROM_EMAIL,
         to: [email],
-        subject: "Bem-vinda à newsletter da YARA Kids",
-        html: `
+            <h2 style="color:#FF69B4; margin-bottom: 12px;">Cadastro confirmado! 🎉</h2>
+        message: "E-mail salvo, mas houve falha ao enviar a confirmação.",
+
+
+async function enforceRateLimit(
+  supabase: ReturnType<typeof createClient>,
+  config: { bucket: string; key: string; limit: number; windowMinutes: number }
+): Promise<{ allowed: boolean }> {
+  const now = Date.now();
+  const cutoffIso = new Date(now - config.windowMinutes * 60_000).toISOString();
+
+  const { data: existing } = await supabase
+    .from("api_rate_limits")
+    .select("id, count, window_started_at")
+    .eq("bucket", config.bucket)
+    .eq("key", config.key)
+    .maybeSingle();
+
+  if (!existing) {
+    await supabase.from("api_rate_limits").insert({
+      bucket: config.bucket,
+      key: config.key,
+      count: 1,
+      window_started_at: new Date().toISOString()
+    });
+    return { allowed: true };
+  }
+
+  const inWindow = existing.window_started_at >= cutoffIso;
+  const nextCount = inWindow ? (existing.count || 0) + 1 : 1;
+
+  await supabase
+    .from("api_rate_limits")
+    .update({
+      count: nextCount,
+      window_started_at: inWindow ? existing.window_started_at : new Date().toISOString()
+    })
+    .eq("id", existing.id);
+
+  return { allowed: nextCount <= config.limit };
+}
+
           <div style="font-family: Arial, sans-serif; max-width: 580px; margin: 0 auto;">
             <h2 style="color:#FF69B4; margin-bottom: 12px;">Cadastro confirmado! ??</h2>
             <p style="font-size:15px; color:#334155; line-height:1.6;">
               Obrigada por se cadastrar na newsletter da <strong>YARA Kids</strong>.
             </p>
             <p style="font-size:15px; color:#334155; line-height:1.6;">
-              Você vai receber ofertas secretas, novidades e mimos especiais em primeira mão.
+              VocÃª vai receber ofertas secretas, novidades e mimos especiais em primeira mÃ£o.
             </p>
             <p style="font-size:13px; color:#64748B; margin-top:24px;">
-              Se você não fez esse cadastro, basta ignorar este e-mail.
+              Se vocÃª nÃ£o fez esse cadastro, basta ignorar este e-mail.
             </p>
           </div>
         `
@@ -113,7 +166,7 @@ serve(async (req) => {
       return json({
         ok: false,
         status: "mail_failed",
-        message: "E-mail salvo, mas houve falha ao enviar a confirma��o.",
+        message: "E-mail salvo, mas houve falha ao enviar a confirmação.",
         detail
       }, 502);
     }
@@ -121,7 +174,7 @@ serve(async (req) => {
     return json({
       ok: true,
       status: "mail_sent",
-      message: "Inscrição confirmada! Verifique seu e-mail."
+      message: "InscriÃ§Ã£o confirmada! Verifique seu e-mail."
     });
   } catch (error) {
     return json({

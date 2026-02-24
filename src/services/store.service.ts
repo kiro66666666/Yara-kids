@@ -553,7 +553,8 @@ export class StoreService {
 
     this.supabase.supabase.auth.getUser().then(({ data }) => {
       if (!data.user) return;
-      const isAdmin = data.user.email === 'admin@yarakids.com.br';
+      const role = data.user.app_metadata?.['role'] || data.user.user_metadata?.['role'];
+      const isAdmin = role === 'admin';
       this.user.set({
         id: data.user.id,
         email: data.user.email,
@@ -566,7 +567,8 @@ export class StoreService {
 
     this.supabase.supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        const isAdmin = session.user.email === 'admin@yarakids.com.br';
+        const role = session.user.app_metadata?.['role'] || session.user.user_metadata?.['role'];
+        const isAdmin = role === 'admin';
         this.user.set({
           id: session.user.id,
           email: session.user.email,
@@ -1050,11 +1052,6 @@ export class StoreService {
       console.error('CEP Error:', error);
       return null;
     }
-  }
-
-  async verifyAdminPassword(password: string): Promise<boolean> {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      return password === 'YaraAdmin@2026!';
   }
 
   // --- Order Actions ---
