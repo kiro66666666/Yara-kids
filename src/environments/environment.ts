@@ -1,22 +1,26 @@
 const runtimeConfig = typeof window !== 'undefined' ? (window.__APP_CONFIG__ ?? {}) : {};
+const cleanConfigValue = (value: unknown): string => {
+  if (typeof value !== 'string') return '';
+  return value.replace(/^\s+/, '').replace(/,\s*$/, '');
+};
 
 export const environment = {
   production: false,
-  geminiApiKey: runtimeConfig.geminiApiKey || '',
+  geminiApiKey: cleanConfigValue(runtimeConfig.geminiApiKey),
   supabase: {
-    url: runtimeConfig.supabaseUrl || '',
-    anonKey: runtimeConfig.supabaseAnonKey || ''
+    url: cleanConfigValue(runtimeConfig.supabaseUrl),
+    anonKey: cleanConfigValue(runtimeConfig.supabaseAnonKey)
   },
   firebase: {
     config: {
-      apiKey: runtimeConfig.firebaseApiKey || '',
-      authDomain: runtimeConfig.firebaseAuthDomain || '',
-      projectId: runtimeConfig.firebaseProjectId || '',
-      storageBucket: runtimeConfig.firebaseStorageBucket || '',
-      messagingSenderId: runtimeConfig.firebaseMessagingSenderId || '',
-      appId: runtimeConfig.firebaseAppId || '',
-      measurementId: runtimeConfig.firebaseMeasurementId || ''
+      apiKey: cleanConfigValue(runtimeConfig.firebaseApiKey),
+      authDomain: cleanConfigValue(runtimeConfig.firebaseAuthDomain),
+      projectId: cleanConfigValue(runtimeConfig.firebaseProjectId),
+      storageBucket: cleanConfigValue(runtimeConfig.firebaseStorageBucket),
+      messagingSenderId: cleanConfigValue(runtimeConfig.firebaseMessagingSenderId),
+      appId: cleanConfigValue(runtimeConfig.firebaseAppId),
+      measurementId: cleanConfigValue(runtimeConfig.firebaseMeasurementId)
     },
-    vapidKey: runtimeConfig.firebaseVapidKey || ''
+    vapidKey: cleanConfigValue(runtimeConfig.firebaseVapidKey)
   }
 };

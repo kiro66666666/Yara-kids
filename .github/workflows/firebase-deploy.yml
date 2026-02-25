@@ -36,6 +36,35 @@ jobs:
           FIREBASE_MEASUREMENT_ID: ${{ secrets.FIREBASE_MEASUREMENT_ID }}
           FIREBASE_VAPID_KEY: ${{ secrets.FIREBASE_VAPID_KEY }}
         run: |
+          sanitize_secret() {
+            local value="$1"
+            # Remove leading whitespace
+            value="${value#"${value%%[![:space:]]*}"}"
+            # Remove a trailing comma if present
+            value="${value%,}"
+            printf '%s' "$value"
+          }
+
+          vars_to_sanitize=(
+            SUPABASE_URL
+            SUPABASE_ANON_KEY
+            GEMINI_API_KEY
+            FIREBASE_API_KEY
+            FIREBASE_AUTH_DOMAIN
+            FIREBASE_PROJECT_ID
+            FIREBASE_STORAGE_BUCKET
+            FIREBASE_MESSAGING_SENDER_ID
+            FIREBASE_APP_ID
+            FIREBASE_MEASUREMENT_ID
+            FIREBASE_VAPID_KEY
+          )
+
+          for name in "${vars_to_sanitize[@]}"; do
+            raw_value="${!name}"
+            clean_value="$(sanitize_secret "$raw_value")"
+            printf -v "$name" '%s' "$clean_value"
+          done
+
           required_vars=(
             SUPABASE_URL
             SUPABASE_ANON_KEY
