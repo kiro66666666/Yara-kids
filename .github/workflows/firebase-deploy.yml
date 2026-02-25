@@ -36,70 +36,73 @@ jobs:
           FIREBASE_MEASUREMENT_ID: ${{ secrets.FIREBASE_MEASUREMENT_ID }}
           FIREBASE_VAPID_KEY: ${{ secrets.FIREBASE_VAPID_KEY }}
         run: |
-          sanitize_secret() {
-            local value="$1"
-            # Remove leading whitespace
-            value="${value#"${value%%[![:space:]]*}"}"
-            # Remove a trailing comma if present
-            value="${value%,}"
-            printf '%s' "$value"
+          node <<'NODE'
+          const fs = require('fs');
+
+          const trimSecret = (value) =>
+            String(value || '')
+              .replace(/^\s+/, '')
+              .replace(/,\s*$/, '')
+              .trim();
+
+          const extractFieldValue = (value, fieldName) => {
+            const cleaned = trimSecret(value);
+            if (!cleaned) return '';
+
+            // Accept values accidentally copied as: fieldName: "value"
+            const wrapped = cleaned.match(new RegExp(`^${fieldName}\\s*:\\s*["']([^"']+)["']$`));
+            if (wrapped) return wrapped[1].trim();
+
+            // Extract from a larger snippet (e.g. copied Firebase SDK example block)
+            const fromSnippet = cleaned.match(new RegExp(`${fieldName}\\s*:\\s*["']([^"']+)["']`));
+            if (fromSnippet) return fromSnippet[1].trim();
+
+            // Remove outer quotes if present
+            const quoted = cleaned.match(/^["'](.+)["']$/);
+            if (quoted) return quoted[1].trim();
+
+            return cleaned;
+          };
+
+          const env = process.env;
+          const config = {
+            supabaseUrl: trimSecret(env.SUPABASE_URL),
+            supabaseAnonKey: trimSecret(env.SUPABASE_ANON_KEY),
+            geminiApiKey: trimSecret(env.GEMINI_API_KEY),
+            firebaseApiKey: extractFieldValue(env.FIREBASE_API_KEY, 'apiKey'),
+            firebaseAuthDomain: extractFieldValue(env.FIREBASE_AUTH_DOMAIN, 'authDomain'),
+            firebaseProjectId: extractFieldValue(env.FIREBASE_PROJECT_ID, 'projectId'),
+            firebaseStorageBucket: extractFieldValue(env.FIREBASE_STORAGE_BUCKET, 'storageBucket'),
+            firebaseMessagingSenderId: extractFieldValue(env.FIREBASE_MESSAGING_SENDER_ID, 'messagingSenderId'),
+            firebaseAppId: extractFieldValue(env.FIREBASE_APP_ID, 'appId'),
+            firebaseMeasurementId: extractFieldValue(env.FIREBASE_MEASUREMENT_ID, 'measurementId'),
+            firebaseVapidKey: trimSecret(env.FIREBASE_VAPID_KEY)
+          };
+
+          const required = [
+            'supabaseUrl',
+            'supabaseAnonKey',
+            'firebaseApiKey',
+            'firebaseAuthDomain',
+            'firebaseProjectId',
+            'firebaseStorageBucket',
+            'firebaseMessagingSenderId',
+            'firebaseAppId',
+            'firebaseVapidKey'
+          ];
+
+          for (const key of required) {
+            if (!config[key]) {
+              throw new Error(`Missing required secret value after normalization: ${key}`);
+            }
           }
 
-          vars_to_sanitize=(
-            SUPABASE_URL
-            SUPABASE_ANON_KEY
-            GEMINI_API_KEY
-            FIREBASE_API_KEY
-            FIREBASE_AUTH_DOMAIN
-            FIREBASE_PROJECT_ID
-            FIREBASE_STORAGE_BUCKET
-            FIREBASE_MESSAGING_SENDER_ID
-            FIREBASE_APP_ID
-            FIREBASE_MEASUREMENT_ID
-            FIREBASE_VAPID_KEY
-          )
-
-          for name in "${vars_to_sanitize[@]}"; do
-            raw_value="${!name}"
-            clean_value="$(sanitize_secret "$raw_value")"
-            printf -v "$name" '%s' "$clean_value"
-          done
-
-          required_vars=(
-            SUPABASE_URL
-            SUPABASE_ANON_KEY
-            FIREBASE_API_KEY
-            FIREBASE_AUTH_DOMAIN
-            FIREBASE_PROJECT_ID
-            FIREBASE_STORAGE_BUCKET
-            FIREBASE_MESSAGING_SENDER_ID
-            FIREBASE_APP_ID
-            FIREBASE_VAPID_KEY
-          )
-
-          for name in "${required_vars[@]}"; do
-            value="${!name}"
-            if [ -z "$value" ]; then
-              echo "Missing required secret: $name"
-              exit 1
-            fi
-          done
-
-          cat > public/app-config.js <<EOF
-          window.__APP_CONFIG__ = {
-            supabaseUrl: "${SUPABASE_URL}",
-            supabaseAnonKey: "${SUPABASE_ANON_KEY}",
-            geminiApiKey: "${GEMINI_API_KEY}",
-            firebaseApiKey: "${FIREBASE_API_KEY}",
-            firebaseAuthDomain: "${FIREBASE_AUTH_DOMAIN}",
-            firebaseProjectId: "${FIREBASE_PROJECT_ID}",
-            firebaseStorageBucket: "${FIREBASE_STORAGE_BUCKET}",
-            firebaseMessagingSenderId: "${FIREBASE_MESSAGING_SENDER_ID}",
-            firebaseAppId: "${FIREBASE_APP_ID}",
-            firebaseMeasurementId: "${FIREBASE_MEASUREMENT_ID}",
-            firebaseVapidKey: "${FIREBASE_VAPID_KEY}"
-          };
-          EOF
+          fs.writeFileSync(
+            'public/app-config.js',
+            `window.__APP_CONFIG__ = ${JSON.stringify(config, null, 2)};\n`,
+            'utf8'
+          );
+          NODE
 
       - name: Install dependencies
         run: npm ci
