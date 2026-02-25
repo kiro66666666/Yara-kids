@@ -41,7 +41,6 @@ serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const rate = await enforceRateLimit(supabase, {
       bucket: "newsletter_subscribe",
@@ -53,7 +52,6 @@ serve(async (req) => {
     if (!rate.allowed) {
       return json({ ok: false, message: "Muitas tentativas. Tente novamente em instantes." }, 429);
     }
-
 
     const { data: existing } = await supabase
       .from("newsletter_subscribers")
@@ -103,9 +101,48 @@ serve(async (req) => {
       body: JSON.stringify({
         from: RESEND_FROM_EMAIL,
         to: [email],
-            <h2 style="color:#FF69B4; margin-bottom: 12px;">Cadastro confirmado! 🎉</h2>
-        message: "E-mail salvo, mas houve falha ao enviar a confirmação.",
+        subject: "Confirmação da newsletter YARA Kids",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 580px; margin: 0 auto;">
+            <h2 style="color:#FF69B4; margin-bottom: 12px;">Cadastro confirmado!</h2>
+            <p style="font-size:15px; color:#334155; line-height:1.6;">
+              Obrigada por se cadastrar na newsletter da <strong>YARA Kids</strong>.
+            </p>
+            <p style="font-size:15px; color:#334155; line-height:1.6;">
+              Você vai receber ofertas secretas, novidades e mimos especiais em primeira mão.
+            </p>
+            <p style="font-size:13px; color:#64748B; margin-top:24px;">
+              Se você não fez esse cadastro, basta ignorar este e-mail.
+            </p>
+          </div>
+        `
+      })
+    });
 
+    if (!emailResponse.ok) {
+      const detail = await emailResponse.text();
+      return json({
+        ok: false,
+        status: "mail_failed",
+        message: "E-mail salvo, mas houve falha ao enviar a confirmação.",
+        detail
+      }, 502);
+    }
+
+    return json({
+      ok: true,
+      status: "mail_sent",
+      message: "Inscrição confirmada! Verifique seu e-mail."
+    });
+  } catch (error) {
+    return json({
+      ok: false,
+      status: "error",
+      message: "Falha inesperada ao processar a newsletter.",
+      detail: String(error)
+    }, 500);
+  }
+});
 
 async function enforceRateLimit(
   supabase: ReturnType<typeof createClient>,
@@ -145,47 +182,6 @@ async function enforceRateLimit(
   return { allowed: nextCount <= config.limit };
 }
 
-          <div style="font-family: Arial, sans-serif; max-width: 580px; margin: 0 auto;">
-            <h2 style="color:#FF69B4; margin-bottom: 12px;">Cadastro confirmado! ??</h2>
-            <p style="font-size:15px; color:#334155; line-height:1.6;">
-              Obrigada por se cadastrar na newsletter da <strong>YARA Kids</strong>.
-            </p>
-            <p style="font-size:15px; color:#334155; line-height:1.6;">
-              VocÃª vai receber ofertas secretas, novidades e mimos especiais em primeira mÃ£o.
-            </p>
-            <p style="font-size:13px; color:#64748B; margin-top:24px;">
-              Se vocÃª nÃ£o fez esse cadastro, basta ignorar este e-mail.
-            </p>
-          </div>
-        `
-      })
-    });
-
-    if (!emailResponse.ok) {
-      const detail = await emailResponse.text();
-      return json({
-        ok: false,
-        status: "mail_failed",
-        message: "E-mail salvo, mas houve falha ao enviar a confirmação.",
-        detail
-      }, 502);
-    }
-
-    return json({
-      ok: true,
-      status: "mail_sent",
-      message: "InscriÃ§Ã£o confirmada! Verifique seu e-mail."
-    });
-  } catch (error) {
-    return json({
-      ok: false,
-      status: "error",
-      message: "Falha inesperada ao processar a newsletter.",
-      detail: String(error)
-    }, 500);
-  }
-});
-
 function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
@@ -195,4 +191,3 @@ function json(payload: unknown, status = 200) {
     }
   });
 }
-

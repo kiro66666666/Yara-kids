@@ -1343,7 +1343,6 @@ export class StoreService {
         this.supabase.supabase.auth.signOut();
     }
     this.user.set(null);
-    localStorage.removeItem('admin_token');
     this.showToast('Você saiu da conta', 'info');
   }
 
