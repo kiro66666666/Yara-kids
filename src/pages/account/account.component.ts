@@ -59,16 +59,24 @@ import { Title } from '@angular/platform-browser';
                  </div>
 
                  <!-- PWA Install Button (Only if installable) -->
-                 @if (!pwa.isStandalone() && !pwa.isIOS()) {
-                   <button (click)="installApp()" class="w-full py-3 bg-brand-dark text-white font-bold rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-lg">
-                     <app-icon name="check" size="18px"></app-icon> Instalar App
-                   </button>
-                 }
+                  @if (!pwa.isStandalone()) {
+                    <button (click)="installApp()" class="w-full py-3 bg-brand-dark text-white font-bold rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-lg">
+                      <app-icon name="check" size="18px"></app-icon> Instalar App
+                    </button>
+                  }
+                  @if (pwa.isIOS() && !pwa.isStandalone()) {
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 text-left px-1">
+                      iPhone/iPad: toque em compartilhar e escolha "Adicionar à Tela de Início".
+                    </p>
+                  }
 
-                 <button (click)="enableNotifications()" class="w-full py-3 bg-brand-pink text-white font-bold rounded-xl hover:bg-pink-600 transition-colors flex items-center justify-center gap-2 shadow-lg">
-                   <app-icon name="mail" size="18px"></app-icon>
-                   {{ notifications.permission() === 'granted' ? 'Notificações ativas' : 'Ativar notificações' }}
-                 </button>
+                  <button (click)="enableNotifications()" class="w-full py-3 px-4 bg-brand-pink text-white font-bold rounded-xl hover:bg-pink-600 transition-colors flex items-center justify-between gap-3 shadow-lg">
+                    <span class="flex items-center gap-2 min-w-0">
+                      <app-icon name="mail" size="18px" class="shrink-0"></app-icon>
+                      <span class="truncate text-left">{{ notifications.permission() === 'granted' ? 'Notificações ativas' : 'Ativar notificações' }}</span>
+                    </span>
+                    <span class="shrink-0 text-[10px] px-2 py-1 rounded-full bg-white/20 border border-white/20">i</span>
+                  </button>
 
                  <button (click)="logout()" class="w-full py-3 border-2 border-red-100 dark:border-red-900/30 text-red-500 font-bold rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center justify-center gap-2">
                    <app-icon name="log-out" size="18px"></app-icon> Sair

@@ -106,14 +106,18 @@
             [style.margin-left]="isDesktopViewport() && sidebarOpen() ? '18rem' : '0'">
         
         <!-- Mobile Header -->
-        <div class="flex md:hidden items-center justify-between mb-6 sticky top-0 z-40 bg-gray-100/90 dark:bg-gray-900/90 backdrop-blur pb-2">
+        <div class="flex items-center justify-between mb-6 sticky top-0 z-40 bg-gray-100/90 dark:bg-gray-900/90 backdrop-blur pb-2">
            <div class="flex items-center gap-3">
-             <button (click)="toggleSidebar()" class="p-2.5 bg-white dark:bg-brand-darksurface rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 text-brand-dark dark:text-white">
-               <app-icon name="menu" size="24px"></app-icon>
-             </button>
-             <h2 class="font-black text-xl text-gray-800 dark:text-white">Painel</h2>
+              <button (click)="toggleSidebar()" class="p-2.5 bg-white dark:bg-brand-darksurface rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 text-brand-dark dark:text-white">
+                @if (sidebarOpen()) {
+                  <app-icon name="x" size="22px"></app-icon>
+                } @else {
+                  <app-icon name="menu" size="22px"></app-icon>
+                }
+              </button>
+              <h2 class="font-black text-xl text-gray-800 dark:text-white">Painel</h2>
            </div>
-        </div>
+         </div>
 
         @if (view() === 'dashboard') {
           <div class="animate-fade-in space-y-8">
@@ -281,6 +285,58 @@
                     </div>
                     <div>
                       <app-image-upload label="Imagem Quem Somos" [currentImage]="tempSettings.aboutImage" (imageSelected)="onAboutImageSelected($event)" (fileSelected)="onAboutFileSelected($event)"></app-image-upload>
+                    </div>
+                    <div class="p-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 space-y-4">
+                      <div class="flex items-center justify-between gap-2">
+                        <h4 class="text-sm font-bold text-gray-800 dark:text-white">Carrossel de Mídias (Quem Somos)</h4>
+                        <span class="text-[11px] text-gray-400">{{ getAboutMedia().length }} item(ns)</span>
+                      </div>
+
+                      <div class="inline-flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <button (click)="aboutMediaType = 'image'" class="px-4 py-2 text-sm font-bold transition-colors" [ngClass]="aboutMediaType === 'image' ? 'bg-brand-pink text-white' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300'">Imagem</button>
+                        <button (click)="aboutMediaType = 'video'" class="px-4 py-2 text-sm font-bold transition-colors" [ngClass]="aboutMediaType === 'video' ? 'bg-brand-pink text-white' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300'">Vídeo</button>
+                      </div>
+
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input type="text" [(ngModel)]="aboutMediaUrl" [placeholder]="aboutMediaType === 'video' ? 'URL do vídeo (opcional)' : 'URL da imagem (opcional)'" class="w-full p-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                        <input type="file" [accept]="aboutMediaType === 'video' ? 'video/mp4,video/webm,video/ogg' : 'image/*'" (change)="onAboutMediaFileSelected($event)" class="w-full p-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-200">
+                      </div>
+
+                      @if(aboutMediaType === 'video') {
+                        <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                          <input type="checkbox" [(ngModel)]="aboutMediaPlayAudioOnHover" class="rounded border-gray-300 text-brand-pink focus:ring-brand-pink">
+                          Ativar som ao passar o mouse
+                        </label>
+                      }
+
+                      <div class="flex justify-end">
+                        <button (click)="addAboutMedia()" class="px-4 py-2.5 bg-brand-pink text-white text-sm font-bold rounded-xl hover:bg-pink-600 transition-colors">Adicionar mídia</button>
+                      </div>
+
+                      @if (getAboutMedia().length > 0) {
+                        <div class="space-y-3">
+                          @for (item of getAboutMedia(); track item.url + $index; let i = $index) {
+                            <div class="p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center gap-3">
+                              <div class="w-16 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0">
+                                @if (item.type === 'video') {
+                                  <video [src]="item.url" class="w-full h-full object-cover" muted playsinline></video>
+                                } @else {
+                                  <img [src]="item.url" class="w-full h-full object-cover" alt="Mídia Quem Somos">
+                                }
+                              </div>
+                              <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ item.type === 'video' ? 'Vídeo' : 'Imagem' }}</p>
+                                <p class="text-xs text-gray-600 dark:text-gray-300 truncate">{{ item.url }}</p>
+                              </div>
+                              <div class="flex items-center gap-1 shrink-0">
+                                <button (click)="moveAboutMedia(i, -1)" [disabled]="i === 0" class="px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300 disabled:opacity-40">↑</button>
+                                <button (click)="moveAboutMedia(i, 1)" [disabled]="i === getAboutMedia().length - 1" class="px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300 disabled:opacity-40">↓</button>
+                                <button (click)="removeAboutMedia(i)" class="px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 text-xs">Remover</button>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      }
                     </div>
                     <div>
                       <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Quem Somos (Texto Completo)</label>
@@ -1089,13 +1145,11 @@
               <div>
                 <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Link</label>
                 <input [(ngModel)]="newBanner.link" type="text" placeholder="/catalogo ou /produto/ID" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
-                <div class="mt-2 space-y-2">
-                  <input [ngModel]="bannerLinkSearch()" (ngModelChange)="bannerLinkSearch.set($event)" type="text" placeholder="Buscar link por nome da página, categoria ou produto" class="w-full p-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
-                  <select size="6" (change)="selectBannerRoute($any($event.target).value)" class="w-full p-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
-                    @for (route of filteredBannerRoutes(); track route.value) {
-                      <option [value]="route.value">{{ route.label }} — {{ route.value }}</option>
-                    }
-                  </select>
+                <div class="mt-2 flex flex-wrap items-center gap-2">
+                  <button (click)="openBannerLinkPicker()" type="button" class="px-3 py-2 bg-brand-soft dark:bg-brand-lilac/20 text-brand-dark dark:text-white font-bold text-xs rounded-xl border border-brand-pink/20 hover:bg-brand-pink hover:text-white transition-colors">
+                    Escolher link no menu
+                  </button>
+                  <span class="text-xs text-gray-500 dark:text-gray-300 truncate max-w-full">Selecionado: {{ newBanner.link || '-' }}</span>
                 </div>
                 <p class="text-[11px] text-gray-400 mt-1">Aceita link interno manual e link de produto/categoria listado acima.</p>
               </div>
@@ -1151,6 +1205,38 @@
             </div>
           </div>
         </div> 
+      }
+
+      @if (showBannerLinkPicker) {
+        <div class="fixed inset-0 z-[130] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
+          <div class="w-full max-w-2xl max-h-[88vh] overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-brand-darksurface shadow-2xl flex flex-col">
+            <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3">
+              <div>
+                <h3 class="text-lg font-black text-gray-800 dark:text-white">Escolher Link do Banner</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-300">Busque por páginas, categorias e produtos.</p>
+              </div>
+              <button (click)="closeBannerLinkPicker()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-300">
+                <app-icon name="x" size="18px"></app-icon>
+              </button>
+            </div>
+
+            <div class="p-5 border-b border-gray-100 dark:border-gray-700">
+              <input [ngModel]="bannerLinkSearch()" (ngModelChange)="bannerLinkSearch.set($event)" type="text" placeholder="Digite nome da página, categoria ou produto" class="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+            </div>
+
+            <div class="p-4 overflow-y-auto custom-scrollbar space-y-2">
+              @for (route of filteredBannerRoutes(); track route.value) {
+                <button (click)="selectBannerRoute(route.value)" class="w-full text-left p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-brand-pink/40 hover:bg-brand-soft/40 dark:hover:bg-brand-lilac/10 transition-colors">
+                  <p class="text-sm font-bold text-gray-800 dark:text-white">{{ route.label }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-300 truncate">{{ route.value }}</p>
+                </button>
+              }
+              @if (filteredBannerRoutes().length === 0) {
+                <p class="text-sm text-center text-gray-500 dark:text-gray-300 py-6">Nenhum link encontrado com esse filtro.</p>
+              }
+            </div>
+          </div>
+        </div>
       }
 
       <!-- UPDATED COUPON MODAL -->

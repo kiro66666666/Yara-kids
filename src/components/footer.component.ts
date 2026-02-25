@@ -77,7 +77,7 @@ import { CommonModule } from '@angular/common';
                 A loja favorita das mamães! Moda infantil com conforto, qualidade e muito estilo para príncipes e princesas.
               </p>
               <div class="flex gap-3">
-                <a href="https://instagram.com/yarakids_moda_infatil" target="_blank" class="w-10 h-10 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-md" aria-label="Instagram">
+                <a href="https://instagram.com/yarakids_moda_infantil" target="_blank" class="w-10 h-10 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-md" aria-label="Instagram">
                   <app-icon name="instagram" size="18px"></app-icon>
                 </a>
                 <a href="https://wa.me/5594991334401" target="_blank" class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-md" aria-label="WhatsApp">
@@ -176,6 +176,13 @@ export class FooterComponent {
 
     if (result.status === 'invalid_email') {
       this.store.showToast('Digite um e-mail válido', 'error');
+      return;
+    }
+
+    if (result.status === 'mail_failed') {
+      this.isSubscribed = true;
+      this.email = '';
+      this.store.showToast(result.message, 'info');
       return;
     }
 

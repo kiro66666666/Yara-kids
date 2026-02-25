@@ -10,6 +10,12 @@ import { FormsModule } from '@angular/forms';
 import { ImageUploadComponent } from '../../ui/image-upload.component';
 import * as d3 from 'd3';
 
+type AboutMediaItem = {
+  type: 'image' | 'video';
+  url: string;
+  playAudioOnHover?: boolean;
+};
+
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
@@ -27,9 +33,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   showCategoryModal = false;
   showProductModal = false;
   showBannerModal = false;
+  showBannerLinkPicker = false;
   showCouponModal = false; 
   showFaqModal = false;
-  sidebarOpen = signal(true);
+  sidebarOpen = signal(typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
   isDesktopViewport = signal(typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
   
   selectedOrder: Order | null = null;
@@ -38,6 +45,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   // Temporary storage for File objects before upload
   tempImageFile: File | null = null;
   aboutImageFile: File | null = null;
+  aboutMediaFile: File | null = null;
   tempCategoryVideoFile: File | null = null;
   tempBannerVideoFile: File | null = null;
   
@@ -77,6 +85,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   };
   templateName = '';
   bannerLinkSearch = signal('');
+  aboutMediaType: 'image' | 'video' = 'image';
+  aboutMediaUrl = '';
+  aboutMediaPlayAudioOnHover = false;
 
   bannerRoutes = [
     { label: 'Início (Home)', value: '/' },
@@ -280,6 +291,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     if (newView === 'settings') {
       this.tempSettings = { ...this.store.institutional() }; 
       this.aboutImageFile = null;
+      this.ensureAboutMediaInitialized();
+      this.resetAboutMediaInputs();
     }
     this.view.set(newView);
     if (!this.isDesktopViewport()) {
@@ -294,9 +307,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   private handleViewportChange = () => {
     const isDesktop = typeof window !== 'undefined' ? window.innerWidth >= 768 : true;
     this.isDesktopViewport.set(isDesktop);
-    if (isDesktop && this.sidebarOpen() === false) {
-      this.sidebarOpen.set(true);
-    }
   };
 
   openOrderDetails(order: Order) {
@@ -451,6 +461,79 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   onAboutImageSelected(base64: string) { this.tempSettings.aboutImage = base64; }
   onAboutFileSelected(file: File) { this.aboutImageFile = file; }
+  onAboutMediaFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.aboutMediaFile = input.files?.[0] || null;
+    if (!this.aboutMediaFile || this.store.mode() === 'real') return;
+    this.fileToDataUrl(this.aboutMediaFile).then(url => (this.aboutMediaUrl = url));
+  }
+
+  getAboutMedia(): AboutMediaItem[] {
+    this.ensureAboutMediaInitialized();
+    return [...(this.tempSettings.aboutMedia || [])];
+  }
+
+  async addAboutMedia() {
+    this.ensureAboutMediaInitialized();
+    let url = this.aboutMediaUrl.trim();
+
+    if (this.aboutMediaFile) {
+      if (this.store.mode() === 'real') {
+        if (this.aboutMediaType === 'video') {
+          const uploaded = await this.store.supabase.uploadVideo(this.aboutMediaFile, 'institutional');
+          if (uploaded) url = uploaded;
+        } else {
+          const uploaded = await this.store.supabase.uploadImage(this.aboutMediaFile, 'institutional');
+          if (uploaded) url = uploaded;
+        }
+      } else if (!url) {
+        url = await this.fileToDataUrl(this.aboutMediaFile);
+      }
+    }
+
+    if (!url) {
+      this.store.showToast('Informe URL da mídia ou envie arquivo.', 'error');
+      return;
+    }
+
+    const item: AboutMediaItem = {
+      type: this.aboutMediaType,
+      url,
+      playAudioOnHover: this.aboutMediaType === 'video' ? this.aboutMediaPlayAudioOnHover : false
+    };
+
+    const current = this.tempSettings.aboutMedia || [];
+    this.tempSettings.aboutMedia = [...current, item];
+
+    if (item.type === 'image' && !this.tempSettings.aboutImage) {
+      this.tempSettings.aboutImage = item.url;
+    }
+
+    this.resetAboutMediaInputs();
+    this.store.showToast('Mídia adicionada em Quem Somos.', 'success');
+  }
+
+  removeAboutMedia(index: number) {
+    this.ensureAboutMediaInitialized();
+    const list = [...(this.tempSettings.aboutMedia || [])];
+    list.splice(index, 1);
+    this.tempSettings.aboutMedia = list;
+
+    const firstImage = list.find(item => item.type === 'image');
+    this.tempSettings.aboutImage = firstImage?.url || list[0]?.url || '';
+  }
+
+  moveAboutMedia(index: number, direction: -1 | 1) {
+    this.ensureAboutMediaInitialized();
+    const list = [...(this.tempSettings.aboutMedia || [])];
+    const target = index + direction;
+    if (target < 0 || target >= list.length) return;
+    [list[index], list[target]] = [list[target], list[index]];
+    this.tempSettings.aboutMedia = list;
+
+    const firstImage = list.find(item => item.type === 'image');
+    this.tempSettings.aboutImage = firstImage?.url || list[0]?.url || '';
+  }
 
   async saveSettings() {
     this.store.showToast('Salvando configurações...', 'info');
@@ -458,6 +541,30 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     if (this.aboutImageFile && this.store.mode() === 'real') {
       const url = await this.store.supabase.uploadImage(this.aboutImageFile, 'institutional');
       if (url) this.tempSettings.aboutImage = url;
+    }
+
+    this.ensureAboutMediaInitialized();
+    const normalizedMedia: AboutMediaItem[] = (this.tempSettings.aboutMedia || [])
+      .map(item => ({
+        type: item.type === 'video' ? ('video' as const) : ('image' as const),
+        url: String(item.url || '').trim(),
+        playAudioOnHover: item.type === 'video' ? !!item.playAudioOnHover : false
+      }))
+      .filter(item => item.url.length > 0);
+
+    if (this.tempSettings.aboutImage?.trim()) {
+      const hasMainImage = normalizedMedia.some(item => item.type === 'image' && item.url === this.tempSettings.aboutImage);
+      if (!hasMainImage) {
+        normalizedMedia.unshift({ type: 'image', url: this.tempSettings.aboutImage.trim(), playAudioOnHover: false });
+      }
+    }
+
+    this.tempSettings.aboutMedia = normalizedMedia;
+    const firstImage = normalizedMedia.find(item => item.type === 'image');
+    if (firstImage?.url) {
+      this.tempSettings.aboutImage = firstImage.url;
+    } else if (normalizedMedia[0]?.url) {
+      this.tempSettings.aboutImage = normalizedMedia[0].url;
     }
 
     this.store.updateInstitutional(this.tempSettings);
@@ -684,6 +791,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.tempImageFile = null;
     this.tempBannerVideoFile = null;
     this.bannerLinkSearch.set('');
+    this.showBannerLinkPicker = false;
     this.showBannerModal = true;
   }
   onBannerImageSelected(b: string) {
@@ -699,8 +807,18 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.fileToDataUrl(file).then(url => (this.newBanner.videoUrl = url));
   }
 
+  openBannerLinkPicker() {
+    this.bannerLinkSearch.set('');
+    this.showBannerLinkPicker = true;
+  }
+
+  closeBannerLinkPicker() {
+    this.showBannerLinkPicker = false;
+  }
+
   selectBannerRoute(value: string) {
     this.newBanner.link = value;
+    this.closeBannerLinkPicker();
   }
 
   async saveBanner() {
@@ -735,6 +853,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       order: Number(this.newBanner.order || 1)
     };
     this.isEditing ? this.store.updateBanner(b) : this.store.addBanner(b);
+    this.showBannerLinkPicker = false;
     this.showBannerModal = false;
   }
   
@@ -787,6 +906,34 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  }
+
+  private resetAboutMediaInputs() {
+    this.aboutMediaType = 'image';
+    this.aboutMediaUrl = '';
+    this.aboutMediaPlayAudioOnHover = false;
+    this.aboutMediaFile = null;
+  }
+
+  private ensureAboutMediaInitialized() {
+    const current = Array.isArray(this.tempSettings.aboutMedia) ? this.tempSettings.aboutMedia : [];
+    const sanitized: AboutMediaItem[] = current
+      .map(item => ({
+        type: item?.type === 'video' ? ('video' as const) : ('image' as const),
+        url: String(item?.url || '').trim(),
+        playAudioOnHover: item?.type === 'video' ? !!item?.playAudioOnHover : false
+      }))
+      .filter(item => item.url.length > 0);
+
+    if (!sanitized.length && this.tempSettings.aboutImage?.trim()) {
+      sanitized.push({
+        type: 'image',
+        url: this.tempSettings.aboutImage.trim(),
+        playAudioOnHover: false
+      });
+    }
+
+    this.tempSettings.aboutMedia = sanitized;
   }
 }
 

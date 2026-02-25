@@ -161,11 +161,18 @@ export interface NewsletterSubscribeResult {
   message: string;
 }
 
+export interface InstitutionalMedia {
+  type: 'image' | 'video';
+  url: string;
+  playAudioOnHover?: boolean;
+}
+
 export interface Institutional {
   logoUrl: string; 
   aboutTitle: string;
   aboutText: string;
   aboutImage: string;
+  aboutMedia?: InstitutionalMedia[];
   privacyText: string;
   termsText: string;
   exchangePolicyText: string;
@@ -200,6 +207,13 @@ const DEFAULT_INSTITUTIONAL: Institutional = {
   aboutTitle: 'Quem Somos',
   aboutText: 'A YARA Kids nasceu do sonho de vestir crianças com a pureza e a alegria da infância. Fundada em Redenção/PA, nossa loja busca trazer o que há de mais moderno e confortável na moda infantil.\n\nAcreditamos que roupa de criança tem que ser alegre, colorida e permitir o movimento. Por isso, selecionamos cada peça com muito carinho.',
   aboutImage: 'https://images.unsplash.com/photo-1621452773781-0f992ee03591?w=800&fit=crop',
+  aboutMedia: [
+    {
+      type: 'image',
+      url: 'https://images.unsplash.com/photo-1621452773781-0f992ee03591?w=800&fit=crop',
+      playAudioOnHover: false
+    }
+  ],
   privacyText: '1. DADOS COLETADOS\nColetamos: nome, e-mail, CPF, endereço e telefone para processamento de pedidos.\n\n2. USO DOS DADOS\nUsamos seus dados para processar pedidos e enviar notificações.\n\n3. COMPARTILHAMENTO\nNão vendemos seus dados. Compartilhamos apenas com transportadoras.',
   termsText: '1. ACEITAÇÃO\nAo usar o site YARA Kids, você concorda com estes termos.\n\n2. PRODUTOS\nAs imagens são ilustrativas. Cores podem variar.\n\n3. PREÇOS\nSujeitos a alteração sem aviso prévio.',
   exchangePolicyText: 'Você tem 7 dias para devolução por arrependimento e 30 dias para troca por defeito ou tamanho. O produto deve estar com a etiqueta.',
@@ -368,6 +382,28 @@ const MOCK_FEEDBACKS: Feedback[] = [
   { id: '1', name: 'Maria Souza', rating: 5, message: 'Amei as roupinhas! Chegou rápido.', date: '15/02/2026' },
   { id: '2', name: 'João Paulo', rating: 4, message: 'Qualidade ótima, atendimento muito bom.', date: '10/02/2026' }
 ];
+
+function normalizeInstitutionalMedia(
+  input: unknown,
+  fallbackImage?: string
+): InstitutionalMedia[] {
+  const fromInput: InstitutionalMedia[] = Array.isArray(input)
+    ? input
+        .map((item: any) => ({
+          type: item?.type === 'video' ? ('video' as const) : ('image' as const),
+          url: String(item?.url || '').trim(),
+          playAudioOnHover: item?.type === 'video' ? !!item?.playAudioOnHover : false
+        }))
+        .filter(item => item.url.length > 0)
+    : [];
+
+  if (fromInput.length > 0) return fromInput;
+
+  const fallback = String(fallbackImage || '').trim();
+  if (!fallback) return [];
+
+  return [{ type: 'image', url: fallback, playAudioOnHover: false }];
+}
 
 const TODAY_STR = new Date().toLocaleDateString('pt-BR'); // Format: dd/mm/yyyy
 
@@ -839,10 +875,17 @@ export class StoreService {
     try {
       const { data } = await this.supabase.supabase.from('site_settings').select('data').single();
       if (data?.data) {
+        const normalizedAboutMedia = normalizeInstitutionalMedia(
+          data.data?.aboutMedia,
+          data.data?.aboutImage || DEFAULT_INSTITUTIONAL.aboutImage
+        );
+        const firstImage = normalizedAboutMedia.find(item => item.type === 'image')?.url;
         const merged = {
           ...DEFAULT_INSTITUTIONAL,
           ...data.data,
           logoUrl: data.data?.branding?.logoUrl || data.data?.logoUrl || DEFAULT_INSTITUTIONAL.logoUrl,
+          aboutMedia: normalizedAboutMedia,
+          aboutImage: firstImage || normalizedAboutMedia[0]?.url || data.data?.aboutImage || DEFAULT_INSTITUTIONAL.aboutImage,
           iconVersion: data.data?.branding?.iconVersion || data.data?.iconVersion || Date.now(),
           notificationsEnabled: data.data?.notifications?.enabled ?? true,
           defaultDeepLink: data.data?.notifications?.defaultDeepLink || '/'
@@ -892,7 +935,15 @@ export class StoreService {
 
   // --- Settings Persistence ---
   async updateInstitutional(data: Institutional) {
-    this.institutional.set(data);
+    const normalizedAboutMedia = normalizeInstitutionalMedia(data.aboutMedia, data.aboutImage);
+    const firstImage = normalizedAboutMedia.find(item => item.type === 'image')?.url;
+    const normalizedInstitutional: Institutional = {
+      ...data,
+      aboutMedia: normalizedAboutMedia,
+      aboutImage: firstImage || normalizedAboutMedia[0]?.url || data.aboutImage
+    };
+
+    this.institutional.set(normalizedInstitutional);
     
     if (this.mode() === 'real') {
         try {
@@ -902,16 +953,16 @@ export class StoreService {
             const iconVersion = Date.now();
             const nextData = {
               ...currentData,
-              ...data,
+              ...normalizedInstitutional,
               branding: {
                 ...(currentData?.branding ? currentData.branding : undefined),
-                logoUrl: data.logoUrl,
+                logoUrl: normalizedInstitutional.logoUrl,
                 iconVersion
               },
               notifications: {
                 ...(currentData?.notifications ? currentData.notifications : undefined),
-                enabled: data.notificationsEnabled ?? true,
-                defaultDeepLink: data.defaultDeepLink || '/'
+                enabled: normalizedInstitutional.notificationsEnabled ?? true,
+                defaultDeepLink: normalizedInstitutional.defaultDeepLink || '/'
               }
             };
             

@@ -1,12 +1,13 @@
-﻿import { Component, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { StoreService } from '../../services/store.service';
+import { StoreService, InstitutionalMedia } from '../../services/store.service';
 import { Title } from '@angular/platform-browser';
+import { IconComponent } from '../../ui/icons';
 
 @Component({
   selector: 'app-about',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     <div class="container mx-auto px-4 py-16 max-w-4xl">
       <div class="text-center mb-16 animate-fade-in">
@@ -16,11 +17,43 @@ import { Title } from '@angular/platform-browser';
       
       <div class="grid md:grid-cols-2 gap-12 items-center mb-20 animate-slide-up">
         <div class="relative h-[400px] rounded-3xl overflow-hidden shadow-xl group bg-gray-100">
-           <img [src]="store.institutional().aboutImage"
-                (error)="handleImageError($event)"
-                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                alt="Quem Somos">
-           <div class="absolute inset-0 bg-gradient-to-t from-brand-pink/20 to-transparent"></div>
+           @if (currentMedia(); as media) {
+             @if (media.type === 'video') {
+               <video [src]="media.url"
+                      class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      autoplay
+                      loop
+                      muted
+                      playsinline
+                      (mouseenter)="onMediaHoverStart($any($event.target), media.playAudioOnHover)"
+                      (mouseleave)="onMediaHoverEnd($any($event.target))"></video>
+             } @else {
+               <img [src]="media.url"
+                    (error)="handleImageError($event)"
+                    class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    alt="Quem Somos">
+             }
+           } @else {
+             <img [src]="store.institutional().aboutImage"
+                  (error)="handleImageError($event)"
+                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  alt="Quem Somos">
+           }
+           <div class="absolute inset-0 bg-gradient-to-t from-brand-pink/20 to-transparent pointer-events-none"></div>
+
+           @if (aboutMedia().length > 1) {
+             <button (click)="prevMedia()" class="absolute left-3 top-1/2 -translate-y-1/2 z-20 text-white/90 hover:text-white transition-colors drop-shadow-[0_2px_6px_rgba(0,0,0,0.65)] p-1">
+               <app-icon name="chevron-left" size="20px"></app-icon>
+             </button>
+             <button (click)="nextMedia()" class="absolute right-3 top-1/2 -translate-y-1/2 z-20 text-white/90 hover:text-white transition-colors drop-shadow-[0_2px_6px_rgba(0,0,0,0.65)] p-1">
+               <app-icon name="chevron-right" size="20px"></app-icon>
+             </button>
+             <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+               @for (item of aboutMedia(); track item.url; let i = $index) {
+                 <button (click)="goToMedia(i)" class="w-2 h-2 rounded-full border border-white/70 transition-colors" [ngClass]="i === mediaIndex() ? 'bg-white' : 'bg-white/30'"></button>
+               }
+             </div>
+           }
         </div>
 
         <div class="space-y-6 text-gray-600 dark:text-gray-200 leading-relaxed text-lg whitespace-pre-line">
@@ -49,9 +82,58 @@ import { Title } from '@angular/platform-browser';
 export class AboutComponent {
   store = inject(StoreService);
   title = inject(Title);
+  mediaIndex = signal(0);
+  aboutMedia = computed<InstitutionalMedia[]>(() => {
+    const institutional = this.store.institutional();
+    const list = Array.isArray(institutional.aboutMedia) ? institutional.aboutMedia : [];
+    const sanitized = list
+      .map(item => ({
+        type: item?.type === 'video' ? 'video' as const : 'image' as const,
+        url: String(item?.url || '').trim(),
+        playAudioOnHover: item?.type === 'video' ? !!item?.playAudioOnHover : false
+      }))
+      .filter(item => item.url.length > 0);
+
+    if (sanitized.length > 0) return sanitized;
+    if (institutional.aboutImage) {
+      return [{ type: 'image', url: institutional.aboutImage, playAudioOnHover: false }];
+    }
+    return [];
+  });
+  currentMedia = computed<InstitutionalMedia | null>(() => {
+    const media = this.aboutMedia();
+    if (!media.length) return null;
+    return media[this.mediaIndex() % media.length];
+  });
 
   constructor() {
     this.title.setTitle('Quem Somos | YARA Kids');
+  }
+
+  nextMedia() {
+    const total = this.aboutMedia().length;
+    if (!total) return;
+    this.mediaIndex.update(v => (v + 1) % total);
+  }
+
+  prevMedia() {
+    const total = this.aboutMedia().length;
+    if (!total) return;
+    this.mediaIndex.update(v => (v - 1 + total) % total);
+  }
+
+  goToMedia(index: number) {
+    this.mediaIndex.set(index);
+  }
+
+  onMediaHoverStart(video: HTMLVideoElement, enableAudio = false) {
+    if (!enableAudio) return;
+    video.muted = false;
+    video.play().catch(() => {});
+  }
+
+  onMediaHoverEnd(video: HTMLVideoElement) {
+    video.muted = true;
   }
 
   handleImageError(event: any) {

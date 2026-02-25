@@ -24,13 +24,17 @@ import { FormsModule } from '@angular/forms';
 
     <header class="sticky top-0 z-40 bg-[#f7f8fc]/95 dark:bg-brand-darkbg/95 backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-gray-800 pb-2 md:pb-0 transition-all duration-300">
       <div class="w-full max-w-[1440px] mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between gap-4 overflow-visible">
-        <button
-          (click)="toggleMenu()"
-          aria-label="Abrir Menu"
-          class="p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-full active:scale-95 transition-transform shrink-0"
-        >
-          <app-icon name="menu"></app-icon>
-        </button>
+        @if (!isAdminRoute()) {
+          <button
+            (click)="toggleMenu()"
+            aria-label="Abrir Menu"
+            class="p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-full active:scale-95 transition-transform shrink-0"
+          >
+            <app-icon name="menu"></app-icon>
+          </button>
+        } @else {
+          <div class="w-10 h-10 shrink-0"></div>
+        }
 
         <div class="flex items-center justify-center cursor-pointer group select-none flex-shrink-0 overflow-visible pl-1" (click)="handleLogoClick()">
           @if (store.institutional().logoUrl) {
@@ -142,7 +146,7 @@ import { FormsModule } from '@angular/forms';
       </div>
     </header>
 
-    @if (isMenuOpen) {
+    @if (isMenuOpen && !isAdminRoute()) {
       <div class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm" (click)="toggleMenu()"></div>
       <div class="fixed inset-y-0 left-0 z-[70] w-[85%] max-w-[320px] bg-white dark:bg-brand-darksurface shadow-2xl flex flex-col transform transition-transform duration-300"
            [class.translate-x-0]="isMenuOpen" [class.-translate-x-full]="!isMenuOpen">
@@ -248,6 +252,10 @@ export class HeaderComponent {
 
   handleLogoClick() {
     this.router.navigate(['/']);
+  }
+
+  isAdminRoute() {
+    return this.router.url.startsWith('/admin');
   }
 
   logout() {
