@@ -132,7 +132,17 @@ CONTATO:
 
     } catch (error) {
       console.error('AI Error:', error);
-      this.messages.update(msgs => [...msgs, { role: 'model', text: 'Ops, tive um probleminha técnico. Pode tentar novamente?' }]);
+      const message = String((error as any)?.message || '').toLowerCase();
+      const authError = message.includes('api key') || message.includes('permission') || message.includes('unauthorized') || message.includes('forbidden');
+      this.messages.update(msgs => [
+        ...msgs,
+        {
+          role: 'model',
+          text: authError
+            ? 'Não consegui autenticar a IA agora. Confira a GEMINI_API_KEY no deploy.'
+            : 'Ops, tive um probleminha técnico. Pode tentar novamente?'
+        }
+      ]);
     } finally {
       this.isLoading.set(false);
     }

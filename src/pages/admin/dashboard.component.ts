@@ -1,5 +1,5 @@
 ﻿
-import { Component, inject, OnInit, signal, computed, ElementRef, ViewChild, effect } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed, ElementRef, ViewChild, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StoreService, Category, Product, Banner, Institutional, Order, ProductVariant, Coupon, InstagramPost, FaqItem } from '../../services/store.service';
 import { NotificationService } from '../../services/notification.service';
@@ -16,7 +16,7 @@ import * as d3 from 'd3';
   imports: [CommonModule, IconComponent, FormsModule, ImageUploadComponent],
   templateUrl: './dashboard.component.html'
 })
-export class AdminDashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnInit, OnDestroy {
   store = inject(StoreService);
   notifications = inject(NotificationService);
   router = inject(Router);
@@ -30,6 +30,8 @@ export class AdminDashboardComponent implements OnInit {
   showCouponModal = false; 
   showFaqModal = false;
   mobileMenuOpen = false;
+  sidebarOpen = signal(true);
+  isDesktopViewport = signal(typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
   
   selectedOrder: Order | null = null;
   isEditing = false;
@@ -38,9 +40,9 @@ export class AdminDashboardComponent implements OnInit {
   tempImageFile: File | null = null;
   aboutImageFile: File | null = null;
   
-  newCategory: Partial<Category> = { name: '', image: '' };
-  newProduct: Partial<Product> = { name: '', price: 0, stock: 0, image: '', categoryId: '', description: '', gender: 'girl', gallery: [], video: '', colorImages: [] };
-  newBanner: Partial<Banner> = { title: '', subtitle: '', link: '/catalogo', image: '', location: 'home-hero', description: '', badgeText: '', endDate: '' };
+  newCategory: Partial<Category> = { name: '', image: '', mediaType: 'image', videoUrl: '', playAudioOnHover: false };
+  newProduct: Partial<Product> = { name: '', price: 0, originalPrice: 0, stock: 0, image: '', categoryId: '', description: '', gender: 'girl', gallery: [], video: '', colorImages: [] };
+  newBanner: Partial<Banner> = { title: '', subtitle: '', link: '/catalogo', image: '', location: 'home-hero', description: '', badgeText: '', endDate: '', mediaType: 'image', videoUrl: '', playAudioOnHover: false, active: true, order: 1 };
   newCoupon: Partial<Coupon> = { code: '', type: 'percent', value: 0, minPurchase: 0, active: true, description: '' };
   newFaq: Partial<FaqItem> = { question: '', answer: '' };
 
@@ -57,6 +59,9 @@ export class AdminDashboardComponent implements OnInit {
   // Instagram Upload
   newInstagramImage: string = '';
   newInstagramFile: File | null = null;
+  newInstagramMediaType: 'image' | 'video' = 'image';
+  newInstagramVideoUrl = '';
+  newInstagramPlayAudioOnHover = false;
 
   notificationComposer: NotificationComposerInput = {
     title: '',
@@ -83,6 +88,28 @@ export class AdminDashboardComponent implements OnInit {
     { label: 'Página de Contato', value: '/contato' }
   ];
 
+  allBannerRoutes = computed(() => {
+    const base = [...this.bannerRoutes];
+    const dynamicCategories = this.store.categories().map(c => ({
+      label: `Categoria: ${c.name}`,
+      value: `/catalogo?cat=${c.slug}`
+    }));
+    const dynamicProducts = this.store.products().slice(0, 200).map(p => ({
+      label: `Produto: ${p.name}`,
+      value: `/produto/${p.id}`
+    }));
+    const merged = [...base, ...dynamicCategories, ...dynamicProducts];
+    const dedup = new Map<string, { label: string; value: string }>();
+    for (const item of merged) {
+      if (!dedup.has(item.value)) dedup.set(item.value, item);
+    }
+    return Array.from(dedup.values());
+  });
+
+  sortedBanners = computed(() =>
+    [...this.store.banners()].sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+  );
+
   @ViewChild('chartContainer') chartContainer!: ElementRef;
 
   constructor() {
@@ -101,7 +128,13 @@ export class AdminDashboardComponent implements OnInit {
     if (this.store.user()?.role !== 'admin') {
       this.router.navigate(['/']);
     }
+    this.handleViewportChange();
+    window.addEventListener('resize', this.handleViewportChange);
     this.notifications.loadAdminData();
+  }
+
+  ngOnDestroy() {
+    window.removeEventListener('resize', this.handleViewportChange);
   }
 
   audiences: { value: NotificationAudience; label: string }[] = [
@@ -239,35 +272,76 @@ export class AdminDashboardComponent implements OnInit {
       this.aboutImageFile = null;
     }
     this.view.set(newView);
-    this.mobileMenuOpen = false;
+    if (!this.isDesktopViewport()) {
+      this.sidebarOpen.set(false);
+    }
   }
+
+  toggleSidebar() {
+    this.sidebarOpen.update(v => !v);
+  }
+
+  private handleViewportChange = () => {
+    const isDesktop = typeof window !== 'undefined' ? window.innerWidth >= 768 : true;
+    this.isDesktopViewport.set(isDesktop);
+    if (isDesktop && this.sidebarOpen() === false) {
+      this.sidebarOpen.set(true);
+    }
+  };
 
   openOrderDetails(order: Order) {
     this.selectedOrder = order;
   }
 
   // --- Instagram Actions ---
-  onInstagramImageSelected(base64: string) { this.newInstagramImage = base64; }
-  onInstagramFileSelected(file: File) { this.newInstagramFile = file; }
+  onInstagramImageSelected(base64: string) {
+    this.newInstagramImage = base64;
+    this.newInstagramMediaType = 'image';
+  }
+  onInstagramFileSelected(file: File) {
+    this.newInstagramFile = file;
+    this.newInstagramMediaType = 'image';
+  }
   
   async addInstagramPost() {
-      if(!this.newInstagramImage && !this.newInstagramFile) return;
-      
-      let imageUrl = this.newInstagramImage;
-      
-      if (this.newInstagramFile && this.store.mode() === 'real') {
-          const url = await this.store.supabase.uploadImage(this.newInstagramFile, 'instagram');
-          if(url) imageUrl = url;
+      if (this.newInstagramMediaType === 'video') {
+        const videoUrl = this.newInstagramVideoUrl.trim();
+        if (!videoUrl) {
+          this.store.showToast('Informe a URL do vídeo para o feed.', 'error');
+          return;
+        }
+        await this.store.addInstagramPost({
+          mediaType: 'video',
+          videoUrl,
+          playAudioOnHover: this.newInstagramPlayAudioOnHover
+        });
+        this.newInstagramVideoUrl = '';
+        this.newInstagramPlayAudioOnHover = false;
+        this.newInstagramImage = '';
+        this.newInstagramFile = null;
+        return;
       }
-      
-      await this.store.addInstagramPost(imageUrl);
+
+      if (!this.newInstagramImage && !this.newInstagramFile) return;
+
+      let imageUrl = this.newInstagramImage;
+
+      if (this.newInstagramFile && this.store.mode() === 'real') {
+        const url = await this.store.supabase.uploadImage(this.newInstagramFile, 'instagram');
+        if (url) imageUrl = url;
+      }
+
+      await this.store.addInstagramPost({
+        mediaType: 'image',
+        imageUrl
+      });
       this.newInstagramImage = '';
       this.newInstagramFile = null;
   }
 
-  async deleteInstagramPost(id: string) {
+  async deleteInstagramPost(id: string | number) {
       if(confirm('Remover post do feed?')) {
-          await this.store.deleteInstagramPost(id);
+          await this.store.deleteInstagramPost(String(id));
       }
   }
 
@@ -381,28 +455,55 @@ export class AdminDashboardComponent implements OnInit {
 
   openCategoryModal(cat?: Category) { 
     this.isEditing = !!cat;
-    this.newCategory = cat ? { ...cat } : { name: '', image: '' }; 
+    this.newCategory = cat
+      ? {
+          ...cat,
+          mediaType: cat.mediaType || 'image',
+          videoUrl: cat.videoUrl || '',
+          playAudioOnHover: !!cat.playAudioOnHover
+        }
+      : { name: '', image: '', mediaType: 'image', videoUrl: '', playAudioOnHover: false };
     this.tempImageFile = null;
     this.showCategoryModal = true; 
   }
   
-  onCategoryImageSelected(base64: string) { this.newCategory.image = base64; }
+  onCategoryImageSelected(base64: string) {
+    this.newCategory.image = base64;
+    this.newCategory.mediaType = 'image';
+  }
   onCategoryFileSelected(file: File) { this.tempImageFile = file; }
 
   async saveCategory() {
     if (!this.newCategory.name) return this.store.showToast('Nome obrigatório', 'error');
+
+    const mediaType = this.newCategory.mediaType || 'image';
     
-    if (this.tempImageFile && this.store.mode() === 'real') {
-       const url = await this.store.supabase.uploadImage(this.tempImageFile);
-       if (url) this.newCategory.image = url;
+    if (mediaType === 'image') {
+      if (this.tempImageFile && this.store.mode() === 'real') {
+         const url = await this.store.supabase.uploadImage(this.tempImageFile);
+         if (url) this.newCategory.image = url;
+      }
+      if (!this.newCategory.image) {
+        return this.store.showToast('Envie uma imagem para a categoria.', 'error');
+      }
+    } else if (!this.newCategory.videoUrl?.trim()) {
+      return this.store.showToast('Informe a URL do vídeo da categoria.', 'error');
     }
 
+    const payload: Category = {
+      id: this.isEditing && this.newCategory.id ? this.newCategory.id : 'cat-' + Date.now(),
+      name: this.newCategory.name,
+      slug: this.newCategory.name.toLowerCase().replace(/ /g, '-'),
+      image: mediaType === 'image' ? (this.newCategory.image || '') : (this.newCategory.image || ''),
+      mediaType,
+      videoUrl: mediaType === 'video' ? this.newCategory.videoUrl?.trim() : '',
+      playAudioOnHover: !!this.newCategory.playAudioOnHover
+    };
+
     if (this.isEditing && this.newCategory.id) {
-       const u = this.newCategory as Category;
-       u.slug = u.name.toLowerCase().replace(/ /g, '-');
-       this.store.updateCategory(u);
+       this.store.updateCategory(payload);
     } else {
-       this.store.addCategory({ id: 'cat-'+Date.now(), name: this.newCategory.name!, slug: this.newCategory.name!.toLowerCase().replace(/ /g, '-'), image: this.newCategory.image || '' });
+       this.store.addCategory(payload);
     }
     this.showCategoryModal = false;
   }
@@ -422,7 +523,7 @@ export class AdminDashboardComponent implements OnInit {
       this.newProduct.colorImages?.forEach(ci => this.tempGalleryTags[ci.image] = ci.color);
     } else {
       const firstCat = this.store.categories()[0]?.id || '';
-      this.newProduct = { name: '', price: 0, stock: 0, image: '', categoryId: firstCat, description: '', gender: 'girl', gallery: [], video: '', colorImages: [] }; 
+      this.newProduct = { name: '', price: 0, originalPrice: 0, stock: 0, image: '', categoryId: firstCat, description: '', gender: 'girl', gallery: [], video: '', colorImages: [] }; 
       this.tempSizes = ''; this.tempColors = ''; this.tempVariants = []; this.tempColorMap = {}; this.tempGalleryTags = {};
     }
     this.showProductModal = true; 
@@ -510,8 +611,12 @@ export class AdminDashboardComponent implements OnInit {
       categoryName: cat ? cat.name : 'Geral',
       gender: this.newProduct.gender || 'girl',
       price: this.newProduct.price,
-      originalPrice: this.newProduct.price * 1.2,
-      discount: 0,
+      originalPrice: this.newProduct.originalPrice && this.newProduct.originalPrice > this.newProduct.price
+        ? this.newProduct.originalPrice
+        : this.newProduct.price,
+      discount: this.newProduct.originalPrice && this.newProduct.originalPrice > this.newProduct.price
+        ? Math.round(((this.newProduct.originalPrice - this.newProduct.price) / this.newProduct.originalPrice) * 100)
+        : 0,
       image: this.newProduct.image || '',
       gallery: gall,
       colorImages: cImgs, 
@@ -542,21 +647,50 @@ export class AdminDashboardComponent implements OnInit {
 
   openBannerModal(b?: Banner) {
     this.isEditing = !!b;
-    this.newBanner = b ? { ...b } : { title: '', subtitle: '', link: '/catalogo', image: '', location: 'home-hero', description: '', badgeText: 'Oferta', endDate: '' };
+    this.newBanner = b
+      ? {
+          ...b,
+          mediaType: b.mediaType || 'image',
+          videoUrl: b.videoUrl || '',
+          playAudioOnHover: !!b.playAudioOnHover,
+          active: b.active !== false,
+          order: b.order ?? 1
+        }
+      : { title: '', subtitle: '', link: '/catalogo', image: '', location: 'home-hero', description: '', badgeText: 'Oferta', endDate: '', mediaType: 'image', videoUrl: '', playAudioOnHover: false, active: true, order: 1 };
     this.tempImageFile = null;
     this.showBannerModal = true;
   }
-  onBannerImageSelected(b: string) { this.newBanner.image = b; }
+  onBannerImageSelected(b: string) {
+    this.newBanner.image = b;
+    this.newBanner.mediaType = 'image';
+  }
   onBannerFileSelected(file: File) { this.tempImageFile = file; }
 
   async saveBanner() {
-    if (this.tempImageFile && this.store.mode() === 'real') {
-       const url = await this.store.supabase.uploadImage(this.tempImageFile);
-       if (url) this.newBanner.image = url;
+    const mediaType = this.newBanner.mediaType || 'image';
+    if (mediaType === 'image') {
+      if (this.tempImageFile && this.store.mode() === 'real') {
+         const url = await this.store.supabase.uploadImage(this.tempImageFile);
+         if (url) this.newBanner.image = url;
+      }
+      if (!this.newBanner.image) {
+        this.store.showToast('Selecione uma imagem para o banner.', 'error');
+        return;
+      }
+    } else if (!this.newBanner.videoUrl?.trim()) {
+      this.store.showToast('Informe a URL do vídeo do banner.', 'error');
+      return;
     }
-    
-    if(!this.newBanner.image) return;
-    const b: Banner = { ...this.newBanner as Banner, id: this.isEditing ? this.newBanner.id! : 'ban-' + Date.now() };
+
+    const b: Banner = {
+      ...(this.newBanner as Banner),
+      id: this.isEditing ? this.newBanner.id! : 'ban-' + Date.now(),
+      mediaType,
+      videoUrl: mediaType === 'video' ? this.newBanner.videoUrl?.trim() : '',
+      playAudioOnHover: !!this.newBanner.playAudioOnHover,
+      active: this.newBanner.active !== false,
+      order: Number(this.newBanner.order || 1)
+    };
     this.isEditing ? this.store.updateBanner(b) : this.store.addBanner(b);
     this.showBannerModal = false;
   }

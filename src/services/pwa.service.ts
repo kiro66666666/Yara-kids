@@ -9,6 +9,7 @@ export class PwaService {
   showInstallPromotion = signal(false);
   isIOS = signal(false);
   isStandalone = signal(false);
+  installSource = signal<'prompt' | 'manual'>('prompt');
 
   constructor() {
     this.checkPlatform();
@@ -30,6 +31,7 @@ export class PwaService {
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault(); // Prevent the mini-infobar from appearing on mobile
       this.deferredPrompt = e;
+      this.installSource.set('prompt');
       // Update UI notify the user they can install the PWA
       if (!this.isStandalone()) {
         this.showInstallPromotion.set(true);
@@ -44,27 +46,37 @@ export class PwaService {
     });
   }
 
-  installPwa() {
+  async installPwa(): Promise<boolean> {
     // Hide the promotion UI
     this.showInstallPromotion.set(false);
     
     if (this.deferredPrompt) {
       // Show the install prompt
-      this.deferredPrompt.prompt();
+      await this.deferredPrompt.prompt();
       // Wait for the user to respond to the prompt
-      this.deferredPrompt.userChoice.then((choiceResult: any) => {
-        if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted the install prompt');
-        } else {
-          console.log('User dismissed the install prompt');
-        }
-        this.deferredPrompt = null;
-      });
+      const choiceResult = await this.deferredPrompt.userChoice;
+      if (choiceResult.outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+      } else {
+        console.log('User dismissed the install prompt');
+      }
+      this.deferredPrompt = null;
+      return choiceResult.outcome === 'accepted';
     }
+
+    this.installSource.set('manual');
+    return false;
   }
 
   dismissPrompt() {
     this.showInstallPromotion.set(false);
     // Logic to save preference/cookie could go here
+  }
+
+  getManualInstallHint() {
+    if (this.isIOS()) {
+      return 'No iPhone/iPad: Compartilhar -> Adicionar à Tela de Início.';
+    }
+    return 'No navegador, abra o menu e escolha "Instalar aplicativo" ou "Criar atalho".';
   }
 }

@@ -1,5 +1,5 @@
 ﻿
-import { Component, inject, signal, computed, effect } from '@angular/core';
+import { Component, inject, signal, computed, effect, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StoreService } from '../../services/store.service';
 import { ProductCardComponent } from '../../components/product-card.component';
@@ -19,7 +19,18 @@ import { Title } from '@angular/platform-browser'; // Added
         <!-- Dynamic Top Banner -->
         @if(catalogBanner(); as banner) {
           <div class="relative w-full h-40 md:h-64 rounded-3xl overflow-hidden mb-8 lg:mb-12 shadow-lg group animate-fade-in">
-            <img [src]="banner.image" [alt]="banner.title" (error)="handleImageError($event)" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+            @if (banner.mediaType === 'video' && banner.videoUrl) {
+              <video [src]="banner.videoUrl"
+                     class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                     autoplay
+                     loop
+                     muted
+                     playsinline
+                     (mouseenter)="onMediaHoverStart($any($event.target), banner.playAudioOnHover)"
+                     (mouseleave)="onMediaHoverEnd($any($event.target))"></video>
+            } @else {
+              <img [src]="banner.image" [alt]="banner.title" (error)="handleImageError($event)" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+            }
             <div class="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent flex flex-col justify-center px-8 md:px-16 text-white">
                <span class="text-[10px] md:text-sm font-bold uppercase tracking-widest text-brand-yellow mb-2">{{ banner.subtitle }}</span>
                <h2 class="text-2xl md:text-5xl font-black mb-4 leading-tight max-w-xl">{{ banner.title }}</h2>
@@ -27,6 +38,19 @@ import { Title } from '@angular/platform-browser'; // Added
                  Conferir <app-icon name="chevron-right" size="16px"></app-icon>
                </a>
             </div>
+            @if (topBanners().length > 1) {
+              <button (click)="prevCatalogBanner('top')" class="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/35 text-white backdrop-blur hover:bg-black/50 transition-colors">
+                <app-icon name="chevron-left" size="18px"></app-icon>
+              </button>
+              <button (click)="nextCatalogBanner('top')" class="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/35 text-white backdrop-blur hover:bg-black/50 transition-colors">
+                <app-icon name="chevron-right" size="18px"></app-icon>
+              </button>
+              <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-black/20 rounded-full px-2.5 py-1">
+                @for (item of topBanners(); track item.id; let i = $index) {
+                  <button (click)="goToCatalogBanner('top', i)" class="w-2 h-2 rounded-full border border-white/70" [ngClass]="i === topBannerIndex() ? 'bg-white' : 'bg-white/30'"></button>
+                }
+              </div>
+            }
           </div>
         }
 
@@ -155,11 +179,35 @@ import { Title } from '@angular/platform-browser'; // Added
               <!-- Sidebar Promo Banner (Desktop Only) -->
               @if(sidebarBanner(); as banner) {
                 <a [routerLink]="banner.link" class="hidden lg:block mt-8 rounded-2xl overflow-hidden relative group cursor-pointer shadow-lg aspect-[3/4]">
-                   <img [src]="banner.image" (error)="handleImageError($event)" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                   @if (banner.mediaType === 'video' && banner.videoUrl) {
+                     <video [src]="banner.videoUrl"
+                            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            autoplay
+                            loop
+                            muted
+                            playsinline
+                            (mouseenter)="onMediaHoverStart($any($event.target), banner.playAudioOnHover)"
+                            (mouseleave)="onMediaHoverEnd($any($event.target))"></video>
+                   } @else {
+                     <img [src]="banner.image" (error)="handleImageError($event)" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                   }
                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-5 text-white">
                       <p class="font-bold text-xl mb-1 leading-tight">{{ banner.title }}</p>
                       <span class="text-xs font-bold bg-white/20 backdrop-blur-md px-3 py-1 rounded-full self-start border border-white/30">Ver Oferta</span>
                    </div>
+                   @if (sidebarBanners().length > 1) {
+                     <button (click)="prevCatalogBanner('sidebar'); $event.preventDefault(); $event.stopPropagation();" class="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/35 text-white backdrop-blur hover:bg-black/50 transition-colors">
+                       <app-icon name="chevron-left" size="14px"></app-icon>
+                     </button>
+                     <button (click)="nextCatalogBanner('sidebar'); $event.preventDefault(); $event.stopPropagation();" class="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/35 text-white backdrop-blur hover:bg-black/50 transition-colors">
+                       <app-icon name="chevron-right" size="14px"></app-icon>
+                     </button>
+                     <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 bg-black/20 rounded-full px-2 py-1">
+                       @for (item of sidebarBanners(); track item.id; let i = $index) {
+                         <button (click)="goToCatalogBanner('sidebar', i); $event.preventDefault(); $event.stopPropagation();" class="w-1.5 h-1.5 rounded-full border border-white/70" [ngClass]="i === sidebarBannerIndex() ? 'bg-white' : 'bg-white/30'"></button>
+                       }
+                     </div>
+                   }
                 </a>
               }
             </div>
@@ -193,7 +241,7 @@ import { Title } from '@angular/platform-browser'; // Added
     </div>
   `
 })
-export class CatalogComponent {
+export class CatalogComponent implements OnDestroy {
   store = inject(StoreService);
   route = inject(ActivatedRoute);
   titleService = inject(Title); // Inject Title service
@@ -211,10 +259,52 @@ export class CatalogComponent {
   showMobileFilters = signal(false);
 
   // Computed Banners
-  catalogBanner = computed(() => this.store.banners().find(b => b.location === 'catalog-top'));
-  sidebarBanner = computed(() => this.store.banners().find(b => b.location === 'catalog-sidebar'));
+  topBanners = computed(() =>
+    this.store
+      .banners()
+      .filter(b => b.location === 'catalog-top' && b.active !== false)
+      .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+  );
+  sidebarBanners = computed(() =>
+    this.store
+      .banners()
+      .filter(b => b.location === 'catalog-sidebar' && b.active !== false)
+      .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+  );
+  topBannerIndex = signal(0);
+  sidebarBannerIndex = signal(0);
+  catalogBanner = computed(() => {
+    const banners = this.topBanners();
+    if (!banners.length) return null;
+    return banners[this.topBannerIndex() % banners.length];
+  });
+  sidebarBanner = computed(() => {
+    const banners = this.sidebarBanners();
+    if (!banners.length) return null;
+    return banners[this.sidebarBannerIndex() % banners.length];
+  });
+  topBannerRotation: any;
+  sidebarBannerRotation: any;
 
   constructor() {
+    effect(() => {
+      const count = this.topBanners().length;
+      if (this.topBannerIndex() >= count && count > 0) this.topBannerIndex.set(0);
+      clearInterval(this.topBannerRotation);
+      if (count > 1) {
+        this.topBannerRotation = setInterval(() => this.nextCatalogBanner('top'), 7000);
+      }
+    });
+
+    effect(() => {
+      const count = this.sidebarBanners().length;
+      if (this.sidebarBannerIndex() >= count && count > 0) this.sidebarBannerIndex.set(0);
+      clearInterval(this.sidebarBannerRotation);
+      if (count > 1) {
+        this.sidebarBannerRotation = setInterval(() => this.nextCatalogBanner('sidebar'), 9000);
+      }
+    });
+
     // Dynamic SEO Title based on search or category
     effect(() => {
         const search = this.searchQuery();
@@ -247,6 +337,11 @@ export class CatalogComponent {
         this.searchQuery.set('');
       }
     });
+  }
+
+  ngOnDestroy() {
+    clearInterval(this.topBannerRotation);
+    clearInterval(this.sidebarBannerRotation);
   }
 
   // --- Computed Filter Logic ---
@@ -308,6 +403,48 @@ export class CatalogComponent {
     this.selectedCategories.set([]);
     this.searchQuery.set('');
     this.sort.set('featured');
+  }
+
+  nextCatalogBanner(target: 'top' | 'sidebar') {
+    if (target === 'top') {
+      const total = this.topBanners().length;
+      if (!total) return;
+      this.topBannerIndex.update(v => (v + 1) % total);
+      return;
+    }
+    const total = this.sidebarBanners().length;
+    if (!total) return;
+    this.sidebarBannerIndex.update(v => (v + 1) % total);
+  }
+
+  prevCatalogBanner(target: 'top' | 'sidebar') {
+    if (target === 'top') {
+      const total = this.topBanners().length;
+      if (!total) return;
+      this.topBannerIndex.update(v => (v - 1 + total) % total);
+      return;
+    }
+    const total = this.sidebarBanners().length;
+    if (!total) return;
+    this.sidebarBannerIndex.update(v => (v - 1 + total) % total);
+  }
+
+  goToCatalogBanner(target: 'top' | 'sidebar', index: number) {
+    if (target === 'top') {
+      this.topBannerIndex.set(index);
+      return;
+    }
+    this.sidebarBannerIndex.set(index);
+  }
+
+  onMediaHoverStart(video: HTMLVideoElement, enableAudio = false) {
+    if (!enableAudio) return;
+    video.muted = false;
+    video.play().catch(() => {});
+  }
+
+  onMediaHoverEnd(video: HTMLVideoElement) {
+    video.muted = true;
   }
 
   handleImageError(event: any) {

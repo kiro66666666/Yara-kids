@@ -24,11 +24,24 @@ import { Title } from '@angular/platform-browser';
           <!-- Profile Card -->
           <div class="md:col-span-1">
             <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 text-center sticky top-24">
-               <div class="w-24 h-24 bg-brand-soft dark:bg-brand-pink/20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl text-brand-pink shadow-inner">
-                 {{ store.user()?.name?.charAt(0) || 'U' }}
+               <div class="relative w-24 h-24 mx-auto mb-4">
+                 @if(store.user()?.avatarUrl) {
+                   <img [src]="store.user()?.avatarUrl" alt="Avatar" class="w-24 h-24 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-lg">
+                 } @else {
+                   <div class="w-24 h-24 bg-brand-soft dark:bg-brand-pink/20 rounded-full flex items-center justify-center text-3xl text-brand-pink shadow-inner">
+                     {{ store.user()?.name?.charAt(0) || 'U' }}
+                   </div>
+                 }
+                 <label class="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-brand-pink text-white flex items-center justify-center cursor-pointer shadow-md hover:bg-pink-600 transition-colors" title="Alterar foto">
+                   <input type="file" accept="image/*" hidden (change)="onAvatarSelected($event)">
+                   <app-icon name="edit" size="14px"></app-icon>
+                 </label>
                </div>
                <h2 class="text-xl font-bold text-gray-800 dark:text-white">{{ store.user()?.name }}</h2>
                <p class="text-gray-500 dark:text-gray-400 text-sm mb-6">{{ store.user()?.email || store.user()?.phone }}</p>
+               @if (avatarUploading()) {
+                 <p class="text-xs text-brand-pink font-bold mb-4">Atualizando foto...</p>
+               }
                
                <div class="space-y-3">
                  <!-- Settings Toggle -->
@@ -47,7 +60,7 @@ import { Title } from '@angular/platform-browser';
 
                  <!-- PWA Install Button (Only if installable) -->
                  @if (!pwa.isStandalone() && !pwa.isIOS()) {
-                   <button (click)="pwa.installPwa()" class="w-full py-3 bg-brand-dark text-white font-bold rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-lg">
+                   <button (click)="installApp()" class="w-full py-3 bg-brand-dark text-white font-bold rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-lg">
                      <app-icon name="check" size="18px"></app-icon> Instalar App
                    </button>
                  }
@@ -128,6 +141,7 @@ export class AccountComponent {
   title = inject(Title);
 
   myOrders = this.store.orders; 
+  avatarUploading = signal(false);
 
   constructor() {
     this.title.setTitle('Minha Conta | YARA Kids');
@@ -146,6 +160,35 @@ export class AccountComponent {
     }
     const ok = await this.notifications.requestPermissionAndSubscribe(user.id, user.email);
     this.store.showToast(ok ? 'Notificações ativadas' : 'Não foi possível ativar notificações', ok ? 'success' : 'error');
+  }
+
+  async installApp() {
+    const installed = await this.pwa.installPwa();
+    if (!installed) {
+      this.store.showToast(this.pwa.getManualInstallHint(), 'info');
+    }
+  }
+
+  onAvatarSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      this.store.showToast('Imagem de perfil deve ter no máximo 2MB.', 'error');
+      return;
+    }
+
+    this.avatarUploading.set(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || '');
+      this.store.updateUserAvatar(result).finally(() => this.avatarUploading.set(false));
+    };
+    reader.onerror = () => {
+      this.avatarUploading.set(false);
+      this.store.showToast('Falha ao carregar imagem de perfil.', 'error');
+    };
+    reader.readAsDataURL(file);
   }
 
   getStatusLabel(status: string) {

@@ -9,6 +9,9 @@ export interface Category {
   name: string;
   slug: string;
   image: string;
+  mediaType?: 'image' | 'video';
+  videoUrl?: string;
+  playAudioOnHover?: boolean;
 }
 
 export interface ProductVariant {
@@ -55,6 +58,8 @@ export interface Banner {
   id: string;
   location: 'home-hero' | 'home-mid' | 'catalog-sidebar' | 'catalog-top';
   image: string;
+  mediaType?: 'image' | 'video';
+  videoUrl?: string;
   title?: string;
   subtitle?: string; 
   link: string;
@@ -62,6 +67,8 @@ export interface Banner {
   badgeText?: string;
   endDate?: string; 
   active?: boolean;
+  playAudioOnHover?: boolean;
+  order?: number;
 }
 
 export interface CartItem extends Product {
@@ -97,6 +104,7 @@ export interface User {
   name: string;
   email?: string;
   phone?: string;
+  avatarUrl?: string;
   role: 'admin' | 'customer';
 }
 
@@ -149,7 +157,7 @@ export interface Feedback {
 
 export interface NewsletterSubscribeResult {
   ok: boolean;
-  status: 'mail_sent' | 'already_exists' | 'mail_failed' | 'invalid_email' | 'error' | 'visual_mode';
+  status: 'mail_sent' | 'already_exists' | 'mail_failed' | 'invalid_email' | 'error' | 'visual_mode' | 'queued';
   message: string;
 }
 
@@ -177,8 +185,11 @@ export interface Institutional {
 
 // NEW: Instagram Post Interface for Admin Management
 export interface InstagramPost {
-  id: string;
+  id: string | number;
   image_url: string;
+  media_type?: 'image' | 'video';
+  video_url?: string;
+  play_audio_on_hover?: boolean;
   likes: number;
   link?: string;
 }
@@ -204,10 +215,10 @@ const DEFAULT_INSTITUTIONAL: Institutional = {
 };
 
 const MOCK_CATEGORIES: Category[] = [
-  { id: 'cat-1', name: 'Vestidos', slug: 'vestidos', image: 'https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?w=600&q=80' },
-  { id: 'cat-2', name: 'Conjuntos', slug: 'conjuntos', image: 'https://images.unsplash.com/photo-1519238263496-6361937a42d8?w=600&q=80' },
-  { id: 'cat-3', name: 'Acessórios', slug: 'acessorios', image: 'https://images.unsplash.com/photo-1617331530973-2dc7463f27a6?w=600&q=80' },
-  { id: 'cat-4', name: 'Maternidade', slug: 'maternidade', image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&q=80' }
+  { id: 'cat-1', name: 'Vestidos', slug: 'vestidos', image: 'https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?w=600&q=80', mediaType: 'image' },
+  { id: 'cat-2', name: 'Conjuntos', slug: 'conjuntos', image: 'https://images.unsplash.com/photo-1519238263496-6361937a42d8?w=600&q=80', mediaType: 'image' },
+  { id: 'cat-3', name: 'Acessórios', slug: 'acessorios', image: 'https://images.unsplash.com/photo-1617331530973-2dc7463f27a6?w=600&q=80', mediaType: 'image' },
+  { id: 'cat-4', name: 'Maternidade', slug: 'maternidade', image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&q=80', mediaType: 'image' }
 ];
 
 const createVariants = (sizes: string[], colors: string[], stockPerVariant: number) => {
@@ -285,20 +296,59 @@ const MOCK_BANNERS: Banner[] = [
     id: 'b1',
     location: 'home-hero',
     image: 'https://images.unsplash.com/photo-1603569283847-aa295f0d016a?w=1800&q=85',
+    mediaType: 'image',
     title: 'Nova Coleção',
     subtitle: 'Estilo e conforto',
-    link: '/catalogo'
+    link: '/catalogo',
+    active: true,
+    order: 1
   },
   {
     id: 'b2',
     location: 'home-mid',
     image: 'https://images.unsplash.com/photo-1604467794349-0b74285de7e7?w=1200&q=80',
+    mediaType: 'image',
     title: 'Looks Completos',
     subtitle: 'Praticidade para mamães',
     description: 'Aproveite descontos exclusivos. Vestidos e conjuntos dignos de princesa!',
     badgeText: 'Tempo Limitado',
     endDate: FUTURE_DATE.toISOString(),
-    link: '/catalogo?cat=conjuntos'
+    link: '/catalogo?cat=conjuntos',
+    active: true,
+    order: 1
+  },
+  {
+    id: 'b3',
+    location: 'home-hero',
+    image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=1800&q=85',
+    mediaType: 'image',
+    title: 'Promoção Especial',
+    subtitle: 'Até 30% OFF',
+    link: '/catalogo?promo=true',
+    active: true,
+    order: 2
+  },
+  {
+    id: 'b4',
+    location: 'catalog-top',
+    image: 'https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=1800&q=85',
+    mediaType: 'image',
+    title: 'Descubra Novidades',
+    subtitle: 'Peças que encantam',
+    link: '/catalogo?sort=newest',
+    active: true,
+    order: 1
+  },
+  {
+    id: 'b5',
+    location: 'catalog-sidebar',
+    image: 'https://images.unsplash.com/photo-1519340241574-2cec6aef0c01?w=900&q=80',
+    mediaType: 'image',
+    title: 'Oferta da Semana',
+    subtitle: 'Preço especial',
+    link: '/catalogo?promo=true',
+    active: true,
+    order: 1
   }
 ];
 
@@ -342,12 +392,12 @@ const MOCK_ORDERS: Order[] = [
 
 // Mock Instagram Posts (Fallback)
 const MOCK_INSTAGRAM: InstagramPost[] = [
-    { id: '1', image_url: 'https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?w=400&q=80', likes: 124 },
-    { id: '2', image_url: 'https://images.unsplash.com/photo-1621452773781-0f992ee03591?w=400&q=80', likes: 256 },
-    { id: '3', image_url: 'https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=400&q=80', likes: 89 },
-    { id: '4', image_url: 'https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=400&q=80', likes: 412 },
-    { id: 5, image: 'https://images.unsplash.com/photo-1603569283847-aa295f0d016a?w=400&q=80', likes: 132 },
-    { id: 6, image: 'https://images.unsplash.com/photo-1471286174890-9c808743a753?w=400&q=80', likes: 98 },
+    { id: '1', image_url: 'https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?w=400&q=80', media_type: 'image', likes: 124 },
+    { id: '2', image_url: 'https://images.unsplash.com/photo-1621452773781-0f992ee03591?w=400&q=80', media_type: 'image', likes: 256 },
+    { id: '3', image_url: 'https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=400&q=80', media_type: 'image', likes: 89 },
+    { id: '4', image_url: 'https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=400&q=80', media_type: 'image', likes: 412 },
+    { id: 5, image_url: 'https://images.unsplash.com/photo-1603569283847-aa295f0d016a?w=400&q=80', media_type: 'image', likes: 132 },
+    { id: 6, image_url: 'https://images.unsplash.com/photo-1471286174890-9c808743a753?w=400&q=80', media_type: 'image', likes: 98 },
 ] as any;
 
 @Injectable({
@@ -555,11 +605,13 @@ export class StoreService {
       if (!data.user) return;
       const role = data.user.app_metadata?.['role'] || data.user.user_metadata?.['role'];
       const isAdmin = role === 'admin';
+      const avatarUrl = data.user.user_metadata?.['avatar_url'] || data.user.user_metadata?.['picture'] || '';
       this.user.set({
         id: data.user.id,
         email: data.user.email,
         phone: data.user.phone,
-        name: data.user.user_metadata?.['name'] || data.user.email?.split('@')[0] || data.user.phone || 'Cliente',
+        name: data.user.user_metadata?.['full_name'] || data.user.user_metadata?.['name'] || data.user.email?.split('@')[0] || data.user.phone || 'Cliente',
+        avatarUrl: avatarUrl || undefined,
         role: isAdmin ? 'admin' : 'customer'
       });
       this.notifications.initialize({ id: data.user.id, email: data.user.email || undefined });
@@ -569,11 +621,13 @@ export class StoreService {
       if (event === 'SIGNED_IN' && session?.user) {
         const role = session.user.app_metadata?.['role'] || session.user.user_metadata?.['role'];
         const isAdmin = role === 'admin';
+        const avatarUrl = session.user.user_metadata?.['avatar_url'] || session.user.user_metadata?.['picture'] || '';
         this.user.set({
           id: session.user.id,
           email: session.user.email,
           phone: session.user.phone,
           name: session.user.user_metadata?.['full_name'] || session.user.email?.split('@')[0] || session.user.phone || 'Cliente',
+          avatarUrl: avatarUrl || undefined,
           role: isAdmin ? 'admin' : 'customer'
         });
         this.notifications.initialize({ id: session.user.id, email: session.user.email || undefined });
@@ -721,6 +775,43 @@ export class StoreService {
     await this.loadRealCatalog();
     await this.loadRealFaqs();
     await this.loadRealUserData();
+    await this.flushPendingNewsletterQueue();
+  }
+
+  private async flushPendingNewsletterQueue() {
+    try {
+      const key = 'yara_newsletter_pending';
+      const raw = localStorage.getItem(key);
+      if (!raw) return;
+      const pending = JSON.parse(raw);
+      if (!Array.isArray(pending) || pending.length === 0) return;
+
+      const keep: string[] = [];
+      for (const email of pending) {
+        try {
+          await this.supabase.insert('newsletter_subscribers', {
+            email,
+            source: 'footer',
+            status: 'active'
+          });
+        } catch (e: any) {
+          const code = String(e?.code || '');
+          const message = String(e?.message || '').toLowerCase();
+          const duplicate = code === '23505' || message.includes('duplicate') || message.includes('unique');
+          if (!duplicate) {
+            keep.push(email);
+          }
+        }
+      }
+
+      if (keep.length > 0) {
+        localStorage.setItem(key, JSON.stringify(keep));
+      } else {
+        localStorage.removeItem(key);
+      }
+    } catch (e) {
+      console.error('Erro ao sincronizar newsletter pendente', e);
+    }
   }
 
   private async loadRealFaqs() {
@@ -840,29 +931,45 @@ export class StoreService {
   }
 
   // --- Instagram Management (Admin) ---
-  async addInstagramPost(imageUrl: string) {
-      const newPost = { id: 'insta-'+Date.now(), image_url: imageUrl, likes: 0, link: '' };
-      
+  async addInstagramPost(payload: { mediaType: 'image' | 'video'; imageUrl?: string; videoUrl?: string; playAudioOnHover?: boolean }) {
+      const row: InstagramPost = {
+        id: 'insta-' + Date.now(),
+        image_url: payload.imageUrl || '',
+        media_type: payload.mediaType,
+        video_url: payload.videoUrl || undefined,
+        play_audio_on_hover: !!payload.playAudioOnHover,
+        likes: 0,
+        link: ''
+      };
+
       if (this.mode() === 'real') {
-          // Remove ID generated by client to let DB generate UUID if configured, or use UUID lib
-          // For simplicity we send specific payload
-          const { error } = await this.supabase.supabase.from('instagram_posts').insert({ image_url: imageUrl, likes: 0 });
+          const { error } = await this.supabase.supabase.from('instagram_posts').insert({
+            image_url: row.image_url,
+            media_type: row.media_type,
+            video_url: row.video_url || null,
+            play_audio_on_hover: row.play_audio_on_hover,
+            likes: row.likes
+          });
           if(!error) {
-              this.loadData(); // Reload to get real ID
+              this.loadData();
               this.showToast('Post adicionado ao feed!', 'success');
+          } else {
+              console.error('Erro ao inserir post no feed', error);
+              this.showToast('Erro ao salvar post no servidor.', 'error');
           }
       } else {
-          this.instagramPosts.update(p => [newPost, ...p]);
+          this.instagramPosts.update(p => [row, ...p]);
           this.showToast('Post adicionado (Visual)', 'success');
       }
   }
 
-  async deleteInstagramPost(id: string) {
+  async deleteInstagramPost(id: string | number) {
+      const normalizedId = String(id);
       if (this.mode() === 'real') {
-          await this.supabase.delete('instagram_posts', id);
-          this.instagramPosts.update(p => p.filter(x => x.id !== id));
+          await this.supabase.delete('instagram_posts', normalizedId);
+          this.instagramPosts.update(p => p.filter(x => String(x.id) !== normalizedId));
       } else {
-          this.instagramPosts.update(p => p.filter(x => x.id !== id));
+          this.instagramPosts.update(p => p.filter(x => String(x.id) !== normalizedId));
       }
       this.showToast('Post removido', 'info');
   }
@@ -1015,12 +1122,61 @@ export class StoreService {
       };
     } catch (e) {
       console.error('Erro ao inscrever newsletter', e);
-      return {
-        ok: false,
-        status: 'error',
-        message: 'Falha de conexão ao cadastrar newsletter.'
-      };
+      return this.fallbackNewsletterInsert(normalizedEmail);
     }
+  }
+
+  private async fallbackNewsletterInsert(email: string): Promise<NewsletterSubscribeResult> {
+    try {
+      const inserted = await this.supabase.insert('newsletter_subscribers', {
+        email,
+        source: 'footer',
+        status: 'active'
+      });
+
+      if (inserted) {
+        return {
+          ok: true,
+          status: 'mail_sent',
+          message: 'Inscrição confirmada! Confira seu e-mail em instantes.'
+        };
+      }
+    } catch (e: any) {
+      const code = String(e?.code || '');
+      const message = String(e?.message || '').toLowerCase();
+      if (code === '23505' || message.includes('duplicate') || message.includes('unique')) {
+        return {
+          ok: true,
+          status: 'already_exists',
+          message: 'Este e-mail já está cadastrado na newsletter.'
+        };
+      }
+      console.error('Fallback newsletter falhou', e);
+    }
+
+    // Final fallback: queue locally to avoid user-facing hard failure.
+    try {
+      const key = 'yara_newsletter_pending';
+      const raw = localStorage.getItem(key);
+      const current = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(current) && !current.includes(email)) {
+        current.push(email);
+      }
+      localStorage.setItem(key, JSON.stringify(current));
+      return {
+        ok: true,
+        status: 'queued',
+        message: 'Cadastro recebido. Vamos sincronizar sua inscrição em seguida.'
+      };
+    } catch (queueError) {
+      console.error('Fallback local da newsletter falhou', queueError);
+    }
+
+    return {
+      ok: false,
+      status: 'error',
+      message: 'Falha de conexão ao cadastrar newsletter.'
+    };
   }
 
   deleteFeedback(id: string) {
@@ -1158,7 +1314,7 @@ export class StoreService {
           id: 'u-' + Date.now(),
           name: email.split('@')[0],
           email: email,
-          role: email.includes('admin') ? 'admin' : 'customer'
+          role: 'customer'
         };
         this.user.set(newUser);
         this.showToast(`Bem-vindo, ${newUser.name}!`, 'success');
@@ -1190,6 +1346,7 @@ export class StoreService {
                 id: 'u-google-' + Date.now(),
                 name: 'Usuario Google',
                 email: 'usuario.google@gmail.com',
+                avatarUrl: 'https://www.gravatar.com/avatar/?d=mp',
                 role: 'customer'
             };
             this.user.set(newUser);
@@ -1344,6 +1501,27 @@ export class StoreService {
     }
     this.user.set(null);
     this.showToast('Você saiu da conta', 'info');
+  }
+
+  async updateUserAvatar(avatarUrl: string) {
+    const currentUser = this.user();
+    if (!currentUser) return;
+
+    const nextAvatar = avatarUrl?.trim() || undefined;
+    this.user.set({ ...currentUser, avatarUrl: nextAvatar });
+
+    if (this.mode() === 'real') {
+      try {
+        const { error } = await this.supabase.supabase.auth.updateUser({
+          data: { avatar_url: nextAvatar || null }
+        });
+        if (error) throw error;
+        this.showToast('Foto de perfil atualizada!', 'success');
+      } catch (e: any) {
+        console.error('Erro ao atualizar avatar', e);
+        this.showToast('Não foi possível salvar a foto de perfil.', 'error');
+      }
+    }
   }
 
   async addProduct(product: Product) {

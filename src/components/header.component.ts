@@ -78,7 +78,11 @@ import { FormsModule } from '@angular/forms';
 
           <div class="relative group cursor-pointer py-4">
             <div class="flex items-center gap-2 hover:text-brand-pink transition-colors">
-              <app-icon name="user" size="20px"></app-icon>
+              @if (store.user()?.avatarUrl) {
+                <img [src]="store.user()?.avatarUrl" alt="Avatar" class="w-7 h-7 rounded-full object-cover border border-gray-200 dark:border-gray-600">
+              } @else {
+                <app-icon name="user" size="20px"></app-icon>
+              }
               <span class="max-w-[100px] truncate">{{ store.user() ? ('Olá, ' + store.user()?.name?.split(' ')?.[0]) : 'Entrar' }}</span>
               <app-icon name="chevron-down" size="12px"></app-icon>
             </div>
@@ -153,9 +157,13 @@ import { FormsModule } from '@angular/forms';
 
            @if(store.user()) {
              <div class="flex items-center gap-3 relative z-10">
-               <div class="w-12 h-12 bg-white text-brand-pink rounded-full flex items-center justify-center font-bold text-lg shadow-sm border-2 border-white/50 shrink-0">
-                 {{ store.user()?.name?.charAt(0) }}
-               </div>
+               @if (store.user()?.avatarUrl) {
+                 <img [src]="store.user()?.avatarUrl" alt="Avatar" class="w-12 h-12 rounded-full object-cover border-2 border-white/60 shadow-sm shrink-0">
+               } @else {
+                 <div class="w-12 h-12 bg-white text-brand-pink rounded-full flex items-center justify-center font-bold text-lg shadow-sm border-2 border-white/50 shrink-0">
+                   {{ store.user()?.name?.charAt(0) }}
+                 </div>
+               }
                <div class="min-w-0">
                  <p class="font-bold text-lg truncate">Olá, {{ store.user()?.name?.split(' ')?.[0] }}</p>
                  <p class="text-xs opacity-90 font-medium">Bem-vinda de volta!</p>

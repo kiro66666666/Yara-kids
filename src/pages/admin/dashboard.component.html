@@ -1,15 +1,15 @@
 ﻿
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex font-sans transition-colors duration-300">
       
-      <!-- Mobile Sidebar Overlay -->
-      @if (mobileMenuOpen) {
-        <div class="fixed inset-0 bg-black/60 z-[90] md:hidden backdrop-blur-sm transition-opacity" (click)="mobileMenuOpen = false"></div>
+      <!-- Sidebar Overlay -->
+      @if (sidebarOpen() && !isDesktopViewport()) {
+        <div class="fixed inset-0 bg-black/60 z-[90] backdrop-blur-sm transition-opacity" (click)="sidebarOpen.set(false)"></div>
       }
 
       <!-- Sidebar -->
-      <aside class="w-72 bg-white dark:bg-brand-darksurface border-r border-gray-200 dark:border-gray-700 flex flex-col fixed inset-y-0 z-[100] shadow-2xl transform transition-transform duration-300 md:translate-x-0"
-             [class.translate-x-0]="mobileMenuOpen"
-             [class.-translate-x-full]="!mobileMenuOpen">
+      <aside class="w-72 bg-white dark:bg-brand-darksurface border-r border-gray-200 dark:border-gray-700 flex flex-col fixed inset-y-0 z-[100] shadow-2xl transform transition-transform duration-300"
+             [class.translate-x-0]="sidebarOpen()"
+             [class.-translate-x-full]="!sidebarOpen()">
         
         <div class="p-8 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3">
           <div class="flex items-center gap-3">
@@ -25,7 +25,7 @@
               <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Painel v4.9.5</p>
             </div>
           </div>
-          <button (click)="mobileMenuOpen = false" class="md:hidden text-gray-400 hover:text-brand-pink"><app-icon name="x" size="24px"></app-icon></button>
+          <button (click)="sidebarOpen.set(false)" class="text-gray-400 hover:text-brand-pink"><app-icon name="x" size="24px"></app-icon></button>
         </div>
         
         <nav class="flex-1 p-6 space-y-2 overflow-y-auto custom-scrollbar">
@@ -77,9 +77,13 @@
 
         <div class="p-6 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
            <div class="flex items-center gap-3 mb-4">
-             <div class="w-8 h-8 rounded-full bg-brand-dark dark:bg-black text-white flex items-center justify-center font-bold text-xs">
-               {{ store.user()?.name?.charAt(0) || 'A' }}
-             </div>
+             @if(store.user()?.avatarUrl) {
+               <img [src]="store.user()?.avatarUrl" alt="Avatar" class="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600">
+             } @else {
+               <div class="w-8 h-8 rounded-full bg-brand-dark dark:bg-black text-white flex items-center justify-center font-bold text-xs">
+                 {{ store.user()?.name?.charAt(0) || 'A' }}
+               </div>
+             }
              <div class="flex-1 min-w-0">
                <p class="text-sm font-bold text-gray-800 dark:text-white truncate">{{ store.user()?.name }}</p>
                <p class="text-xs text-green-500 font-medium flex items-center gap-1"><span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Online</p>
@@ -98,12 +102,19 @@
       </aside>
 
       <!-- Main Content -->
-      <main class="flex-1 md:ml-72 p-4 md:p-8 overflow-y-auto bg-gray-50 dark:bg-brand-darkbg transition-colors duration-300">
+      <main class="flex-1 p-4 md:p-8 overflow-y-auto bg-gray-50 dark:bg-brand-darkbg transition-colors duration-300"
+            [style.margin-left]="isDesktopViewport() && sidebarOpen() ? '18rem' : '0'">
+        
+        <!-- Desktop Sidebar Toggle -->
+        <button (click)="toggleSidebar()"
+                class="hidden md:flex fixed top-5 left-5 z-[110] p-2.5 bg-white dark:bg-brand-darksurface rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 text-brand-dark dark:text-white">
+          <app-icon [name]="sidebarOpen() ? 'x' : 'menu'" size="20px"></app-icon>
+        </button>
         
         <!-- Mobile Header -->
-        <div class="md:hidden flex items-center justify-between mb-6 sticky top-0 z-40 bg-gray-100/90 dark:bg-gray-900/90 backdrop-blur pb-2">
+        <div class="flex md:hidden items-center justify-between mb-6 sticky top-0 z-40 bg-gray-100/90 dark:bg-gray-900/90 backdrop-blur pb-2">
            <div class="flex items-center gap-3">
-             <button (click)="mobileMenuOpen = true" class="p-2.5 bg-white dark:bg-brand-darksurface rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 text-brand-dark dark:text-white">
+             <button (click)="toggleSidebar()" class="p-2.5 bg-white dark:bg-brand-darksurface rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 text-brand-dark dark:text-white">
                <app-icon name="menu" size="24px"></app-icon>
              </button>
              <h2 class="font-black text-xl text-gray-800 dark:text-white">Painel</h2>
@@ -372,16 +383,24 @@
              </div>
              
              <div class="grid grid-cols-1 gap-6">
-               @for(banner of store.banners(); track banner.id) {
+               @for(banner of sortedBanners(); track banner.id) {
                  <div class="bg-white dark:bg-brand-darksurface p-4 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-4 items-center group">
                     <div class="w-full md:w-48 h-32 rounded-2xl overflow-hidden relative">
-                      <img [src]="banner.image" class="w-full h-full object-cover">
+                      @if (banner.mediaType === 'video' && banner.videoUrl) {
+                        <video [src]="banner.videoUrl" class="w-full h-full object-cover" autoplay loop muted playsinline></video>
+                      } @else {
+                        <img [src]="banner.image" class="w-full h-full object-cover">
+                      }
                       <div class="absolute top-2 left-2 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded">{{ getBannerLocationName(banner.location) }}</div>
+                      @if (banner.mediaType === 'video') {
+                        <div class="absolute top-2 right-2 bg-white/85 text-gray-700 text-[10px] font-bold px-2 py-1 rounded">Vídeo</div>
+                      }
                     </div>
                     <div class="flex-1 text-center md:text-left">
                        <h3 class="font-bold text-lg text-gray-800 dark:text-white">{{ banner.title || 'Sem Título' }}</h3>
                        <p class="text-sm text-gray-500">{{ banner.subtitle }}</p>
                        <p class="text-xs text-gray-400 mt-1">Link: {{ banner.link }}</p>
+                       <p class="text-xs text-gray-400 mt-1">Ordem: {{ banner.order || 1 }} • {{ banner.active !== false ? 'Ativo' : 'Inativo' }}</p>
                     </div>
                     <div class="flex gap-2">
                        <button (click)="openBannerModal(banner)" class="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100"><app-icon name="edit" size="18px"></app-icon></button>
@@ -479,20 +498,48 @@
 
              <!-- Upload Area -->
              <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
-                <h3 class="font-bold text-lg mb-4">Adicionar Nova Foto</h3>
-                <div class="flex flex-col md:flex-row gap-4 items-end">
-                   <app-image-upload label="Foto do Feed" [currentImage]="newInstagramImage" (imageSelected)="onInstagramImageSelected($event)" (fileSelected)="onInstagramFileSelected($event)"></app-image-upload>
-                   <button (click)="addInstagramPost()" [disabled]="!newInstagramImage && !newInstagramFile" class="bg-brand-pink text-white px-6 py-3 rounded-xl font-bold hover:bg-pink-600 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed mb-2 h-12">
-                     Adicionar ao Feed
-                   </button>
+                <h3 class="font-bold text-lg mb-4">Adicionar Nova Mídia</h3>
+                <div class="inline-flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-4">
+                  <button (click)="newInstagramMediaType = 'image'" class="px-4 py-2 text-sm font-bold transition-colors" [ngClass]="newInstagramMediaType === 'image' ? 'bg-brand-pink text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300'">Imagem</button>
+                  <button (click)="newInstagramMediaType = 'video'" class="px-4 py-2 text-sm font-bold transition-colors" [ngClass]="newInstagramMediaType === 'video' ? 'bg-brand-pink text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300'">Vídeo</button>
                 </div>
+
+                @if (newInstagramMediaType === 'image') {
+                  <div class="flex flex-col md:flex-row gap-4 items-end">
+                     <app-image-upload label="Imagem do Feed" [currentImage]="newInstagramImage" (imageSelected)="onInstagramImageSelected($event)" (fileSelected)="onInstagramFileSelected($event)"></app-image-upload>
+                     <button (click)="addInstagramPost()" [disabled]="!newInstagramImage && !newInstagramFile" class="bg-brand-pink text-white px-6 py-3 rounded-xl font-bold hover:bg-pink-600 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed mb-2 h-12">
+                       Adicionar ao Feed
+                     </button>
+                  </div>
+                } @else {
+                  <div class="space-y-3">
+                    <div>
+                      <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">URL do vídeo</label>
+                      <input [(ngModel)]="newInstagramVideoUrl" type="text" placeholder="https://..." class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink outline-none transition-all">
+                    </div>
+                    <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                      <input type="checkbox" [(ngModel)]="newInstagramPlayAudioOnHover" class="rounded border-gray-300 text-brand-pink focus:ring-brand-pink">
+                      Ativar som ao passar o mouse no site
+                    </label>
+                    <button (click)="addInstagramPost()" [disabled]="!newInstagramVideoUrl.trim()" class="bg-brand-pink text-white px-6 py-3 rounded-xl font-bold hover:bg-pink-600 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                      Adicionar Vídeo ao Feed
+                    </button>
+                  </div>
+                }
              </div>
 
              <!-- Grid -->
              <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                @for (post of store.instagramPosts(); track post.id) {
                  <div class="relative group aspect-square rounded-xl overflow-hidden shadow-sm">
-                   <img [src]="post.image_url" class="w-full h-full object-cover">
+                   @if (post.media_type === 'video' && post.video_url) {
+                     <video [src]="post.video_url" class="w-full h-full object-cover" muted loop autoplay playsinline></video>
+                     @if (post.play_audio_on_hover) {
+                       <span class="absolute top-2 left-2 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded">Som no hover</span>
+                     }
+                   } @else {
+                     <img [src]="post.image_url" class="w-full h-full object-cover">
+                   }
                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                      <button (click)="deleteInstagramPost(post.id)" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transform hover:scale-110 transition-all">
                        <app-icon name="trash" size="20px"></app-icon>
@@ -558,7 +605,14 @@
                       <tr class="bg-white dark:bg-brand-darksurface hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
                         <td class="px-4 md:px-6 py-4"><input type="checkbox" [checked]="selectedProducts().includes(product.id)" (change)="toggleProductSelection(product.id)" class="rounded text-brand-pink focus:ring-brand-pink border-gray-300"></td>
                         <td class="px-4 md:px-6 py-4"><div class="flex items-center gap-3"><img [src]="product.image" class="w-10 h-10 rounded-lg object-cover bg-gray-100 border border-gray-200"><div class="min-w-0"><p class="font-bold text-gray-800 dark:text-gray-200 line-clamp-1 text-xs md:text-sm">{{ product.name }}</p></div></div></td>
-                        <td class="px-4 md:px-6 py-4 font-bold text-brand-dark dark:text-white">R$ {{ product.price.toFixed(2) }}</td>
+                        <td class="px-4 md:px-6 py-4 font-bold text-brand-dark dark:text-white">
+                          <div class="flex flex-col">
+                            @if(product.originalPrice > product.price) {
+                              <span class="text-[10px] text-gray-400 line-through">R$ {{ product.originalPrice.toFixed(2) }}</span>
+                            }
+                            <span>R$ {{ product.price.toFixed(2) }}</span>
+                          </div>
+                        </td>
                         <td class="px-4 md:px-6 py-4 flex justify-center gap-2"><button (click)="openProductModal(product)" class="text-blue-500 hover:text-blue-700 p-2 bg-blue-50 rounded-lg mr-1"><app-icon name="edit" size="16px"></app-icon></button><button (click)="deleteProduct(product.id)" class="text-red-500 hover:text-red-700 p-2 bg-red-50 rounded-lg"><app-icon name="trash" size="16px"></app-icon></button></td>
                       </tr>
                     }
@@ -578,7 +632,13 @@
              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                @for(cat of store.categories(); track cat.id) {
                  <div class="bg-white dark:bg-brand-darksurface rounded-3xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4 group transition-colors relative">
-                    <div class="w-20 h-20 rounded-2xl overflow-hidden bg-gray-50 dark:bg-gray-800 flex-shrink-0 relative border border-gray-100"><img [src]="cat.image" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"></div>
+                   <div class="w-20 h-20 rounded-2xl overflow-hidden bg-gray-50 dark:bg-gray-800 flex-shrink-0 relative border border-gray-100">
+                     @if (cat.mediaType === 'video' && cat.videoUrl) {
+                       <video [src]="cat.videoUrl" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" autoplay loop muted playsinline></video>
+                     } @else {
+                       <img [src]="cat.image" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                     }
+                   </div>
                     <div class="flex-1 min-w-0"><h3 class="font-bold text-gray-800 dark:text-white truncate text-lg">{{ cat.name }}</h3></div>
                     <div class="flex flex-col gap-1"><button (click)="openCategoryModal(cat)" class="p-2 text-blue-500 bg-blue-50 rounded-lg"><app-icon name="edit" size="14px"></app-icon></button><button (click)="deleteCategory(cat.id)" class="p-2 text-red-500 bg-red-50 rounded-lg"><app-icon name="trash" size="14px"></app-icon></button></div>
                  </div>
@@ -594,6 +654,13 @@
                 <h2 class="text-3xl font-black text-gray-800 dark:text-white">Notificações Globais</h2>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Composer completo, segmentação, histórico e reenvio.</p>
               </div>
+            </div>
+
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/40 rounded-2xl p-4 flex items-start gap-3">
+              <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-sm shrink-0">i</div>
+              <p class="text-sm text-blue-900 dark:text-blue-200">
+                Use esta área para campanhas globais: crie o conteúdo, selecione público, dispare agora ou agende. O histórico mostra status e permite reenviar falhas.
+              </p>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -840,6 +907,10 @@
                   <input type="number" [(ngModel)]="newProduct.price" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
                 </div>
                 <div>
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Preço Anterior (Opcional)</label>
+                  <input type="number" [(ngModel)]="newProduct.originalPrice" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all" placeholder="Ex: 120">
+                </div>
+                <div>
                   <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Gênero</label>
                   <select [(ngModel)]="newProduct.gender" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all cursor-pointer">
                     <option value="girl">Menina</option>
@@ -975,7 +1046,24 @@
                 <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Nome</label>
                 <input type="text" [(ngModel)]="newCategory.name" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
               </div>
-              <app-image-upload [currentImage]="newCategory.image" (imageSelected)="onCategoryImageSelected($event)" (fileSelected)="onCategoryFileSelected($event)"></app-image-upload>
+
+              <div class="inline-flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <button (click)="newCategory.mediaType = 'image'" class="px-4 py-2 text-sm font-bold transition-colors" [ngClass]="newCategory.mediaType === 'image' ? 'bg-brand-pink text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300'">Imagem</button>
+                <button (click)="newCategory.mediaType = 'video'" class="px-4 py-2 text-sm font-bold transition-colors" [ngClass]="newCategory.mediaType === 'video' ? 'bg-brand-pink text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300'">Vídeo</button>
+              </div>
+
+              @if(newCategory.mediaType === 'video') {
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">URL do vídeo</label>
+                  <input type="text" [(ngModel)]="newCategory.videoUrl" placeholder="https://..." class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                </div>
+                <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <input type="checkbox" [(ngModel)]="newCategory.playAudioOnHover" class="rounded border-gray-300 text-brand-pink focus:ring-brand-pink">
+                  Ativar som ao passar o mouse
+                </label>
+              } @else {
+                <app-image-upload [currentImage]="newCategory.image" (imageSelected)="onCategoryImageSelected($event)" (fileSelected)="onCategoryFileSelected($event)"></app-image-upload>
+              }
             </div>
             <div class="flex gap-3 mt-8">
               <button (click)="showCategoryModal = false" class="flex-1 py-3 font-bold rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 transition-colors">Cancelar</button>
@@ -1001,9 +1089,13 @@
               </div>
               <div>
                 <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Link</label>
-                <select [(ngModel)]="newBanner.link" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all cursor-pointer">
-                  <option *ngFor="let r of bannerRoutes" [value]="r.value">{{ r.label }}</option>
-                </select>
+                <input [(ngModel)]="newBanner.link" list="banner-link-options" type="text" placeholder="Digite ou selecione um link interno" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                <datalist id="banner-link-options">
+                  @for (route of allBannerRoutes(); track route.value) {
+                    <option [value]="route.value">{{ route.label }}</option>
+                  }
+                </datalist>
+                <p class="text-[11px] text-gray-400 mt-1">Aceita páginas, categorias e produtos cadastrados.</p>
               </div>
               <div>
                 <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Local</label>
@@ -1014,7 +1106,37 @@
                   <option value="catalog-sidebar">Catálogo: Lateral</option>
                 </select>
               </div>
-              <app-image-upload [currentImage]="newBanner.image!" (imageSelected)="onBannerImageSelected($event)" (fileSelected)="onBannerFileSelected($event)"></app-image-upload>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Ordem</label>
+                  <input type="number" min="1" [(ngModel)]="newBanner.order" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                </div>
+                <div class="flex items-end">
+                  <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 pb-2">
+                    <input type="checkbox" [(ngModel)]="newBanner.active" class="rounded border-gray-300 text-brand-pink focus:ring-brand-pink">
+                    Banner ativo
+                  </label>
+                </div>
+              </div>
+
+              <div class="inline-flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <button (click)="newBanner.mediaType = 'image'" class="px-4 py-2 text-sm font-bold transition-colors" [ngClass]="newBanner.mediaType === 'image' ? 'bg-brand-pink text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300'">Imagem</button>
+                <button (click)="newBanner.mediaType = 'video'" class="px-4 py-2 text-sm font-bold transition-colors" [ngClass]="newBanner.mediaType === 'video' ? 'bg-brand-pink text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300'">Vídeo</button>
+              </div>
+
+              @if(newBanner.mediaType === 'video') {
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">URL do vídeo</label>
+                  <input type="text" [(ngModel)]="newBanner.videoUrl" placeholder="https://..." class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                </div>
+                <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <input type="checkbox" [(ngModel)]="newBanner.playAudioOnHover" class="rounded border-gray-300 text-brand-pink focus:ring-brand-pink">
+                  Ativar som ao passar o mouse
+                </label>
+              } @else {
+                <app-image-upload [currentImage]="newBanner.image!" (imageSelected)="onBannerImageSelected($event)" (fileSelected)="onBannerFileSelected($event)"></app-image-upload>
+              }
             </div>
             <div class="flex gap-3 mt-8">
               <button (click)="showBannerModal = false" class="flex-1 py-3 font-bold rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 transition-colors">Cancelar</button>

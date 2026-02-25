@@ -15,13 +15,24 @@ import { SeoService } from '../../services/seo.service';
   template: `
     <!-- Hero Section (Eager Load - LCP) -->
     <div class="relative w-full h-[500px] lg:h-[600px] overflow-hidden bg-brand-soft dark:bg-brand-darkbg group">
-      @if (heroBanner(); as banner) {
+      @if (currentHeroBanner(); as banner) {
         <div class="absolute inset-0">
-          <img [src]="banner.image" 
-               [alt]="banner.title || 'Nova Coleção'" 
-               (error)="handleImageError($event)"
-               class="w-full h-full object-cover object-center lg:object-[center_30%] transition-transform duration-[20s] group-hover:scale-105"
-               fetchpriority="high"> <!-- Priority Load -->
+          @if (banner.mediaType === 'video' && banner.videoUrl) {
+            <video [src]="banner.videoUrl"
+                   class="w-full h-full object-cover object-center lg:object-[center_30%] transition-transform duration-[20s] group-hover:scale-105"
+                   autoplay
+                   loop
+                   muted
+                   playsinline
+                   (mouseenter)="onMediaHoverStart($any($event.target), banner.playAudioOnHover)"
+                   (mouseleave)="onMediaHoverEnd($any($event.target))"></video>
+          } @else {
+            <img [src]="banner.image" 
+                 [alt]="banner.title || 'Nova Coleção'" 
+                 (error)="handleImageError($event)"
+                 class="w-full h-full object-cover object-center lg:object-[center_30%] transition-transform duration-[20s] group-hover:scale-105"
+                 fetchpriority="high"> <!-- Priority Load -->
+          }
           
           <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent md:via-black/20 md:to-transparent"></div>
           <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
@@ -51,6 +62,21 @@ import { SeoService } from '../../services/seo.service';
             </div>
           </div>
         </div>
+
+        @if (heroBanners().length > 1) {
+          <button (click)="prevBanner('hero')" class="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/30 text-white backdrop-blur hover:bg-black/50 transition-colors">
+            <app-icon name="chevron-left" size="20px"></app-icon>
+          </button>
+          <button (click)="nextBanner('hero')" class="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/30 text-white backdrop-blur hover:bg-black/50 transition-colors">
+            <app-icon name="chevron-right" size="20px"></app-icon>
+          </button>
+          <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-full backdrop-blur">
+            @for (item of heroBanners(); track item.id; let i = $index) {
+              <button (click)="goToBanner('hero', i)" class="w-2.5 h-2.5 rounded-full border border-white/70 transition-colors"
+                      [ngClass]="i === heroIndex() ? 'bg-white' : 'bg-white/30'"></button>
+            }
+          </div>
+        }
       } @else {
         <div class="absolute inset-0 bg-brand-pink flex items-center justify-center text-white">
            <p class="font-bold">Configure o Banner Principal no Admin</p>
@@ -95,7 +121,18 @@ import { SeoService } from '../../services/seo.service';
             <a [routerLink]="['/catalogo']" [queryParams]="{cat: cat.slug}" class="flex flex-col items-center gap-4 group cursor-pointer w-24 md:w-32">
               <div class="w-24 h-24 md:w-32 md:h-32 rounded-full p-[3px] bg-gradient-to-tr from-brand-pink via-purple-400 to-brand-lilac shadow-lg group-hover:scale-105 transition-transform duration-300">
                 <div class="w-full h-full rounded-full border-[3px] border-white dark:border-brand-darkbg overflow-hidden bg-white">
-                   <img [src]="cat.image" [alt]="cat.name" (error)="handleImageError($event)" class="w-full h-full object-cover hover:opacity-90 transition-opacity">
+                   @if (cat.mediaType === 'video' && cat.videoUrl) {
+                     <video [src]="cat.videoUrl"
+                            class="w-full h-full object-cover hover:opacity-90 transition-opacity"
+                            autoplay
+                            loop
+                            muted
+                            playsinline
+                            (mouseenter)="onMediaHoverStart($any($event.target), cat.playAudioOnHover)"
+                            (mouseleave)="onMediaHoverEnd($any($event.target))"></video>
+                   } @else {
+                     <img [src]="cat.image" [alt]="cat.name" (error)="handleImageError($event)" class="w-full h-full object-cover hover:opacity-90 transition-opacity">
+                   }
                 </div>
               </div>
               <span class="text-sm font-bold text-gray-700 dark:text-gray-200 group-hover:text-brand-pink transition-colors">{{ cat.name }}</span>
@@ -140,13 +177,24 @@ import { SeoService } from '../../services/seo.service';
     </section>
 
     <!-- PROMO BANNER (HOME MID) -->
-    @if (promoBanner(); as banner) {
+    @if (currentPromoBanner(); as banner) {
       @defer (on viewport) {
         <section class="py-16 bg-gradient-to-r from-brand-soft to-white dark:from-brand-darkbg dark:to-brand-darksurface relative overflow-hidden">
            <div class="w-full max-w-[1440px] mx-auto px-4 md:px-6 relative z-10 flex flex-col md:flex-row items-center gap-12">
              <div class="w-full md:w-1/2">
                 <div class="relative rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white dark:border-brand-darksurface rotate-1 hover:rotate-0 transition-transform duration-500">
-                   <img [src]="banner.image" (error)="handleImageError($event)" class="w-full object-cover h-[400px]">
+                   @if (banner.mediaType === 'video' && banner.videoUrl) {
+                     <video [src]="banner.videoUrl"
+                            class="w-full object-cover h-[400px]"
+                            autoplay
+                            loop
+                            muted
+                            playsinline
+                            (mouseenter)="onMediaHoverStart($any($event.target), banner.playAudioOnHover)"
+                            (mouseleave)="onMediaHoverEnd($any($event.target))"></video>
+                   } @else {
+                     <img [src]="banner.image" (error)="handleImageError($event)" class="w-full object-cover h-[400px]">
+                   }
                    @if(banner.badgeText) {
                      <div class="absolute bottom-6 left-6 bg-white/90 backdrop-blur px-4 py-2 rounded-xl text-brand-dark font-black text-xs uppercase tracking-widest shadow-lg">
                        {{ banner.badgeText }}
@@ -189,6 +237,21 @@ import { SeoService } from '../../services/seo.service';
                 </div>
              </div>
            </div>
+
+           @if (promoBanners().length > 1) {
+             <button (click)="prevBanner('promo')" class="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 text-white backdrop-blur hover:bg-black/50 transition-colors">
+               <app-icon name="chevron-left" size="20px"></app-icon>
+             </button>
+             <button (click)="nextBanner('promo')" class="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 text-white backdrop-blur hover:bg-black/50 transition-colors">
+               <app-icon name="chevron-right" size="20px"></app-icon>
+             </button>
+             <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/10 px-3 py-1.5 rounded-full backdrop-blur">
+               @for (item of promoBanners(); track item.id; let i = $index) {
+                 <button (click)="goToBanner('promo', i)" class="w-2.5 h-2.5 rounded-full border border-gray-500/50 transition-colors"
+                         [ngClass]="i === promoIndex() ? 'bg-gray-700 dark:bg-white' : 'bg-white/60 dark:bg-gray-500'"></button>
+               }
+             </div>
+           }
         </section>
       } @placeholder {
         <!-- Add Placeholder to prevent defer crash -->
@@ -211,17 +274,56 @@ export class HomeComponent implements OnInit, OnDestroy {
   seo = inject(SeoService);
   
   // Dynamic Banners
-  heroBanner = computed(() => this.store.banners().find(b => b.location === 'home-hero'));
-  promoBanner = computed(() => this.store.banners().find(b => b.location === 'home-mid'));
+  heroBanners = computed(() =>
+    this.store
+      .banners()
+      .filter(b => b.location === 'home-hero' && b.active !== false)
+      .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+  );
+  promoBanners = computed(() =>
+    this.store
+      .banners()
+      .filter(b => b.location === 'home-mid' && b.active !== false)
+      .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+  );
+  heroIndex = signal(0);
+  promoIndex = signal(0);
+  currentHeroBanner = computed(() => {
+    const banners = this.heroBanners();
+    if (!banners.length) return null;
+    return banners[this.heroIndex() % banners.length];
+  });
+  currentPromoBanner = computed(() => {
+    const banners = this.promoBanners();
+    if (!banners.length) return null;
+    return banners[this.promoIndex() % banners.length];
+  });
 
   timeLeft = signal({ hours: 0, minutes: 0, seconds: 0 });
-  interval: any;
+  countdownInterval: any;
+  heroRotationInterval: any;
+  promoRotationInterval: any;
 
   constructor() {
     effect(() => {
-        if (this.promoBanner()) {
-            this.startTimer();
-        }
+      const heroCount = this.heroBanners().length;
+      if (this.heroIndex() >= heroCount && heroCount > 0) this.heroIndex.set(0);
+      clearInterval(this.heroRotationInterval);
+      if (heroCount > 1) {
+        this.heroRotationInterval = setInterval(() => this.nextBanner('hero'), 7000);
+      }
+    });
+
+    effect(() => {
+      const promoCount = this.promoBanners().length;
+      if (this.promoIndex() >= promoCount && promoCount > 0) this.promoIndex.set(0);
+      clearInterval(this.promoRotationInterval);
+      if (promoCount > 1) {
+        this.promoRotationInterval = setInterval(() => this.nextBanner('promo'), 8000);
+      }
+      if (this.currentPromoBanner()) {
+        this.startTimer();
+      }
     });
   }
 
@@ -231,13 +333,15 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    clearInterval(this.interval);
+    clearInterval(this.countdownInterval);
+    clearInterval(this.heroRotationInterval);
+    clearInterval(this.promoRotationInterval);
   }
 
   startTimer() {
-    clearInterval(this.interval);
+    clearInterval(this.countdownInterval);
     
-    const banner = this.promoBanner();
+    const banner = this.currentPromoBanner();
     let deadline = new Date();
     
     if (banner?.endDate) {
@@ -257,12 +361,57 @@ export class HomeComponent implements OnInit, OnDestroy {
         });
       } else {
         this.timeLeft.set({ hours: 0, minutes: 0, seconds: 0 });
-        clearInterval(this.interval);
+        clearInterval(this.countdownInterval);
       }
     };
 
     calculate();
-    this.interval = setInterval(calculate, 1000);
+    this.countdownInterval = setInterval(calculate, 1000);
+  }
+
+  nextBanner(type: 'hero' | 'promo') {
+    if (type === 'hero') {
+      const total = this.heroBanners().length;
+      if (!total) return;
+      this.heroIndex.update(v => (v + 1) % total);
+      return;
+    }
+    const total = this.promoBanners().length;
+    if (!total) return;
+    this.promoIndex.update(v => (v + 1) % total);
+    this.startTimer();
+  }
+
+  prevBanner(type: 'hero' | 'promo') {
+    if (type === 'hero') {
+      const total = this.heroBanners().length;
+      if (!total) return;
+      this.heroIndex.update(v => (v - 1 + total) % total);
+      return;
+    }
+    const total = this.promoBanners().length;
+    if (!total) return;
+    this.promoIndex.update(v => (v - 1 + total) % total);
+    this.startTimer();
+  }
+
+  goToBanner(type: 'hero' | 'promo', index: number) {
+    if (type === 'hero') {
+      this.heroIndex.set(index);
+      return;
+    }
+    this.promoIndex.set(index);
+    this.startTimer();
+  }
+
+  onMediaHoverStart(video: HTMLVideoElement, enableAudio = false) {
+    if (!enableAudio) return;
+    video.muted = false;
+    video.play().catch(() => {});
+  }
+
+  onMediaHoverEnd(video: HTMLVideoElement) {
+    video.muted = true;
   }
 
   handleImageError(event: any) {
