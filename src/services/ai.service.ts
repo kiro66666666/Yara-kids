@@ -14,7 +14,7 @@ export interface ChatMessage {
   providedIn: 'root'
 })
 export class AiService {
-  private ai: GoogleGenAI;
+  private ai: GoogleGenAI | null = null;
   private store = inject(StoreService);
   
   messages = signal<ChatMessage[]>([
@@ -24,8 +24,9 @@ export class AiService {
   isLoading = signal(false);
 
   constructor() {
-    // FIX: Use environment variable defined in Angular, not process.env
-    this.ai = new GoogleGenAI({ apiKey: environment.geminiApiKey });
+    if (environment.geminiApiKey) {
+      this.ai = new GoogleGenAI({ apiKey: environment.geminiApiKey });
+    }
   }
 
   private getProductContext(): string {
@@ -61,6 +62,14 @@ CONTATO:
   }
 
   async sendMessage(userMessage: string) {
+    if (!this.ai) {
+      this.messages.update(msgs => [
+        ...msgs,
+        { role: 'model', text: 'Assistente indisponivel: configure geminiApiKey no app-config.js.' }
+      ]);
+      return;
+    }
+
     // 1. Adiciona mensagem do usuário
     this.messages.update(msgs => [...msgs, { role: 'user', text: userMessage }]);
     this.isLoading.set(true);

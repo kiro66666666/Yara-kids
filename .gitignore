@@ -11,6 +11,11 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
+!.env.example
+public/app-config.local.js
+tmp_zip_*
 
 # Editor directories and files
 .vscode/*

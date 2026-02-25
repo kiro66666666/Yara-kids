@@ -1,6 +1,7 @@
 ﻿
 import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { environment } from '../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -8,12 +9,17 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 export class SupabaseService {
   public supabase: SupabaseClient;
 
-  // Credenciais fornecidas
-  private supabaseUrl = 'https://dkhkvdaydvjjkquvzhit.supabase.co';
-  private supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRraGt2ZGF5ZHZqamtxdXZ6aGl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMjk4MTgsImV4cCI6MjA4NjcwNTgxOH0.-MsZ6nqqFZp2z2Joa__fIiLNWJV18DDxx-zmZvhwh2w';
-
   constructor() {
-    this.supabase = createClient(this.supabaseUrl, this.supabaseKey);
+    const supabaseUrl = environment.supabase.url;
+    const supabaseKey = environment.supabase.anonKey;
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error(
+        'Supabase config ausente. Configure public/app-config.js (ou Secrets no GitHub Actions) com supabaseUrl e supabaseAnonKey.'
+      );
+    }
+
+    this.supabase = createClient(supabaseUrl, supabaseKey);
   }
 
   // --- STORAGE (Imagens) ---

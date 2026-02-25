@@ -208,6 +208,18 @@ export class NotificationService {
 
     this.firebaseReady = (async () => {
       try {
+        const firebaseConfigOk =
+          !!environment.firebase.config.apiKey &&
+          !!environment.firebase.config.projectId &&
+          !!environment.firebase.config.appId &&
+          !!environment.firebase.config.messagingSenderId &&
+          !!environment.firebase.vapidKey;
+
+        if (!firebaseConfigOk) {
+          console.warn('Firebase messaging config ausente em app-config.js');
+          return false;
+        }
+
         const supported = await isMessagingSupported();
         if (!supported) {
           return false;

@@ -1,60 +1,91 @@
+# YARA Kids
 
-# 🎀 YARA Kids - Moda Infantil
+Loja virtual Angular com deploy no Firebase Hosting e backend no Supabase.
 
-Bem-vindo ao projeto **YARA Kids v3.2**, uma loja virtual completa desenvolvida com Angular moderno e TailwindCSS.
+## Setup local
 
-## 🚀 Como Executar o Projeto
+1. Instale dependencias:
+   ```bash
+   npm ci
+   ```
+2. Configure `public/app-config.js` com as chaves publicas do seu projeto.
+3. Rode local:
+   ```bash
+   npm start
+   ```
 
-Este projeto utiliza Angular v17+ (Standalone Components).
+## Runtime config (frontend)
 
-### Opção 1: Visual Studio Code (Local)
+O frontend le configuracao de `window.__APP_CONFIG__` em `public/app-config.js`.
 
-1.  **Pré-requisitos**: Certifique-se de ter o [Node.js](https://nodejs.org/) instalado (v18 ou superior).
-2.  **Instale o Angular CLI** (se não tiver):
-    ```bash
-    npm install -g @angular/cli
-    ```
-3.  **Baixe/Clone este código** para uma pasta.
-4.  **Inicialize**: Como este é um código gerado via AI Studio (estrutura simplificada), você precisará criar um projeto Angular padrão e copiar os arquivos `src` para dentro dele.
-    ```bash
-    ng new yara-kids --style=css --routing --ssr=false
-    # Escolha 'Yes' para roteamento e 'CSS' para estilos.
-    ```
-5.  **Instale dependências**: O projeto usa Tailwind via CDN no `index.html` para facilitar o teste, mas você pode instalar via npm se preferir.
-6.  **Copie os arquivos**: Copie todo o conteúdo da pasta `src` gerada aqui para a pasta `src` do seu novo projeto Angular.
-7.  **Execute**:
-    ```bash
-    ng serve
-    ```
-8.  Acesse `http://localhost:4200`.
+Campos esperados:
 
-### Opção 2: StackBlitz (Online - Mais Fácil)
+- `supabaseUrl`
+- `supabaseAnonKey`
+- `geminiApiKey`
+- `firebaseApiKey`
+- `firebaseAuthDomain`
+- `firebaseProjectId`
+- `firebaseStorageBucket`
+- `firebaseMessagingSenderId`
+- `firebaseAppId`
+- `firebaseMeasurementId`
+- `firebaseVapidKey`
 
-1.  Acesse [StackBlitz](https://stackblitz.com/).
-2.  Crie um novo projeto **Angular**.
-3.  Copie e cole o conteúdo de cada arquivo fornecido nos respectivos arquivos do projeto online.
-4.  O projeto rodará automaticamente.
+Importante:
 
-## 📱 Recursos Principais
+- `supabaseAnonKey` e chaves Firebase Web sao publicas por natureza.
+- Nunca use `SUPABASE_SERVICE_ROLE_KEY` no frontend.
 
-*   **Design Responsivo**: Mobile-first com TailwindCSS.
-*   **Gestão de Estado**: Usando Angular Signals (`store.service.ts`).
-*   **Carrinho & Checkout**: Fluxo completo com validação de estoque e cupom.
-*   **Painel Administrativo**:
-    *   Senha: `YaraAdmin@2026!`
-    *   Gestão de Produtos, Categorias e Pedidos.
-    *   Alternância entre Modo Visual (Dados Demo) e Modo Real.
-*   **Integrações**:
-    *   WhatsApp para finalizar compras.
-    *   Botão "Avise-me quando chegar".
-    *   Feed do Instagram simulado.
+## Deploy automatico (GitHub -> Firebase)
 
-## 📁 Estrutura de Pastas
+Workflow: `.github/workflows/firebase-deploy.yml`
 
-*   `src/components`: Componentes reutilizáveis (Header, Footer, Cards).
-*   `src/pages`: Páginas principais (Home, Catálogo, Admin, Checkout).
-*   `src/services`: Lógica de negócio e estado global.
-*   `src/ui`: Elementos de UI base (ícones, etc).
+Crie estes Secrets no GitHub (Settings -> Secrets and variables -> Actions):
 
----
-*Desenvolvido para YARA Kids - Fevereiro 2026*
+- `FIREBASE_TOKEN`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `GEMINI_API_KEY`
+- `FIREBASE_API_KEY`
+- `FIREBASE_AUTH_DOMAIN`
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_STORAGE_BUCKET`
+- `FIREBASE_MESSAGING_SENDER_ID`
+- `FIREBASE_APP_ID`
+- `FIREBASE_MEASUREMENT_ID`
+- `FIREBASE_VAPID_KEY`
+
+No deploy, o workflow gera `public/app-config.js` em runtime com esses secrets.
+
+## Secrets de backend (Supabase Edge Functions)
+
+Esses secrets devem ficar apenas no Supabase:
+
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `MERCADO_PAGO_ACCESS_TOKEN`
+- `MERCADO_PAGO_WEBHOOK_SECRET`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY`
+
+Exemplo:
+
+```bash
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=...
+supabase secrets set MERCADO_PAGO_ACCESS_TOKEN=...
+supabase secrets set RESEND_API_KEY=...
+```
+
+## Admin
+
+Nao existe senha secreta no frontend.
+
+Acesso admin depende de role no Supabase:
+
+- `app_metadata.role = 'admin'` (preferencial)
+- fallback: `user_metadata.role = 'admin'`
+
+Rota protegida: `/admin`.
