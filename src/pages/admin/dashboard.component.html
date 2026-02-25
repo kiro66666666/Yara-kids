@@ -25,7 +25,7 @@
               <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Painel v4.9.5</p>
             </div>
           </div>
-          <button (click)="sidebarOpen.set(false)" class="text-gray-400 hover:text-brand-pink"><app-icon name="x" size="24px"></app-icon></button>
+          <button (click)="sidebarOpen.set(false)" class="md:hidden text-gray-400 hover:text-brand-pink"><app-icon name="x" size="24px"></app-icon></button>
         </div>
         
         <nav class="flex-1 p-6 space-y-2 overflow-y-auto custom-scrollbar">
@@ -104,12 +104,6 @@
       <!-- Main Content -->
       <main class="flex-1 p-4 md:p-8 overflow-y-auto bg-gray-50 dark:bg-brand-darkbg transition-colors duration-300"
             [style.margin-left]="isDesktopViewport() && sidebarOpen() ? '18rem' : '0'">
-        
-        <!-- Desktop Sidebar Toggle -->
-        <button (click)="toggleSidebar()"
-                class="hidden md:flex fixed top-5 left-5 z-[110] p-2.5 bg-white dark:bg-brand-darksurface rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 text-brand-dark dark:text-white">
-          <app-icon [name]="sidebarOpen() ? 'x' : 'menu'" size="20px"></app-icon>
-        </button>
         
         <!-- Mobile Header -->
         <div class="flex md:hidden items-center justify-between mb-6 sticky top-0 z-40 bg-gray-100/90 dark:bg-gray-900/90 backdrop-blur pb-2">
@@ -1054,6 +1048,11 @@
 
               @if(newCategory.mediaType === 'video') {
                 <div>
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Arquivo de vídeo (MP4/WebM)</label>
+                  <input type="file" accept="video/mp4,video/webm,video/ogg" (change)="onCategoryVideoFileSelected($event)" class="w-full p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-200">
+                  <p class="text-[11px] text-gray-400 mt-1">Você pode enviar arquivo do PC ou informar URL.</p>
+                </div>
+                <div>
                   <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">URL do vídeo</label>
                   <input type="text" [(ngModel)]="newCategory.videoUrl" placeholder="https://..." class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
                 </div>
@@ -1089,13 +1088,16 @@
               </div>
               <div>
                 <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Link</label>
-                <input [(ngModel)]="newBanner.link" list="banner-link-options" type="text" placeholder="Digite ou selecione um link interno" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
-                <datalist id="banner-link-options">
-                  @for (route of allBannerRoutes(); track route.value) {
-                    <option [value]="route.value">{{ route.label }}</option>
-                  }
-                </datalist>
-                <p class="text-[11px] text-gray-400 mt-1">Aceita páginas, categorias e produtos cadastrados.</p>
+                <input [(ngModel)]="newBanner.link" type="text" placeholder="/catalogo ou /produto/ID" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                <div class="mt-2 space-y-2">
+                  <input [ngModel]="bannerLinkSearch()" (ngModelChange)="bannerLinkSearch.set($event)" type="text" placeholder="Buscar link por nome da página, categoria ou produto" class="w-full p-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                  <select size="6" (change)="selectBannerRoute($any($event.target).value)" class="w-full p-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                    @for (route of filteredBannerRoutes(); track route.value) {
+                      <option [value]="route.value">{{ route.label }} — {{ route.value }}</option>
+                    }
+                  </select>
+                </div>
+                <p class="text-[11px] text-gray-400 mt-1">Aceita link interno manual e link de produto/categoria listado acima.</p>
               </div>
               <div>
                 <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Local</label>
@@ -1126,6 +1128,11 @@
               </div>
 
               @if(newBanner.mediaType === 'video') {
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Arquivo de vídeo (MP4/WebM)</label>
+                  <input type="file" accept="video/mp4,video/webm,video/ogg" (change)="onBannerVideoFileSelected($event)" class="w-full p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-200">
+                  <p class="text-[11px] text-gray-400 mt-1">Você pode enviar arquivo do PC ou informar URL.</p>
+                </div>
                 <div>
                   <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">URL do vídeo</label>
                   <input type="text" [(ngModel)]="newBanner.videoUrl" placeholder="https://..." class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">

@@ -29,7 +29,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   showBannerModal = false;
   showCouponModal = false; 
   showFaqModal = false;
-  mobileMenuOpen = false;
   sidebarOpen = signal(true);
   isDesktopViewport = signal(typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
   
@@ -39,6 +38,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   // Temporary storage for File objects before upload
   tempImageFile: File | null = null;
   aboutImageFile: File | null = null;
+  tempCategoryVideoFile: File | null = null;
+  tempBannerVideoFile: File | null = null;
   
   newCategory: Partial<Category> = { name: '', image: '', mediaType: 'image', videoUrl: '', playAudioOnHover: false };
   newProduct: Partial<Product> = { name: '', price: 0, originalPrice: 0, stock: 0, image: '', categoryId: '', description: '', gender: 'girl', gallery: [], video: '', colorImages: [] };
@@ -75,6 +76,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     channels: ['web', 'android']
   };
   templateName = '';
+  bannerLinkSearch = signal('');
 
   bannerRoutes = [
     { label: 'Início (Home)', value: '/' },
@@ -109,6 +111,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   sortedBanners = computed(() =>
     [...this.store.banners()].sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
   );
+  filteredBannerRoutes = computed(() => {
+    const query = this.bannerLinkSearch().trim().toLowerCase();
+    const routes = this.allBannerRoutes();
+    if (!query) return routes.slice(0, 60);
+    return routes
+      .filter(r => r.label.toLowerCase().includes(query) || r.value.toLowerCase().includes(query))
+      .slice(0, 120);
+  });
 
   @ViewChild('chartContainer') chartContainer!: ElementRef;
 
@@ -464,6 +474,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         }
       : { name: '', image: '', mediaType: 'image', videoUrl: '', playAudioOnHover: false };
     this.tempImageFile = null;
+    this.tempCategoryVideoFile = null;
     this.showCategoryModal = true; 
   }
   
@@ -472,6 +483,13 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.newCategory.mediaType = 'image';
   }
   onCategoryFileSelected(file: File) { this.tempImageFile = file; }
+  onCategoryVideoFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] || null;
+    this.tempCategoryVideoFile = file;
+    if (!file || this.store.mode() === 'real') return;
+    this.fileToDataUrl(file).then(url => (this.newCategory.videoUrl = url));
+  }
 
   async saveCategory() {
     if (!this.newCategory.name) return this.store.showToast('Nome obrigatório', 'error');
@@ -486,8 +504,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       if (!this.newCategory.image) {
         return this.store.showToast('Envie uma imagem para a categoria.', 'error');
       }
-    } else if (!this.newCategory.videoUrl?.trim()) {
-      return this.store.showToast('Informe a URL do vídeo da categoria.', 'error');
+    } else {
+      if (this.tempCategoryVideoFile && this.store.mode() === 'real') {
+        const uploadedVideoUrl = await this.store.supabase.uploadVideo(this.tempCategoryVideoFile, 'categories');
+        if (uploadedVideoUrl) this.newCategory.videoUrl = uploadedVideoUrl;
+      }
+      if (!this.newCategory.videoUrl?.trim()) {
+        return this.store.showToast('Informe a URL do vídeo ou envie um arquivo .mp4.', 'error');
+      }
     }
 
     const payload: Category = {
@@ -658,6 +682,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         }
       : { title: '', subtitle: '', link: '/catalogo', image: '', location: 'home-hero', description: '', badgeText: 'Oferta', endDate: '', mediaType: 'image', videoUrl: '', playAudioOnHover: false, active: true, order: 1 };
     this.tempImageFile = null;
+    this.tempBannerVideoFile = null;
+    this.bannerLinkSearch.set('');
     this.showBannerModal = true;
   }
   onBannerImageSelected(b: string) {
@@ -665,6 +691,17 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.newBanner.mediaType = 'image';
   }
   onBannerFileSelected(file: File) { this.tempImageFile = file; }
+  onBannerVideoFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] || null;
+    this.tempBannerVideoFile = file;
+    if (!file || this.store.mode() === 'real') return;
+    this.fileToDataUrl(file).then(url => (this.newBanner.videoUrl = url));
+  }
+
+  selectBannerRoute(value: string) {
+    this.newBanner.link = value;
+  }
 
   async saveBanner() {
     const mediaType = this.newBanner.mediaType || 'image';
@@ -677,9 +714,15 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
         this.store.showToast('Selecione uma imagem para o banner.', 'error');
         return;
       }
-    } else if (!this.newBanner.videoUrl?.trim()) {
-      this.store.showToast('Informe a URL do vídeo do banner.', 'error');
-      return;
+    } else {
+      if (this.tempBannerVideoFile && this.store.mode() === 'real') {
+        const uploadedVideoUrl = await this.store.supabase.uploadVideo(this.tempBannerVideoFile, 'banners');
+        if (uploadedVideoUrl) this.newBanner.videoUrl = uploadedVideoUrl;
+      }
+      if (!this.newBanner.videoUrl?.trim()) {
+        this.store.showToast('Informe a URL do vídeo ou envie um arquivo .mp4.', 'error');
+        return;
+      }
     }
 
     const b: Banner = {
@@ -735,6 +778,15 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   deleteFeedback(id: string) {
     if (confirm('Excluir este feedback?')) this.store.deleteFeedback(id);
+  }
+
+  private fileToDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
 }
 

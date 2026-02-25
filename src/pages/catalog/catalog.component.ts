@@ -37,15 +37,15 @@ import { Title } from '@angular/platform-browser'; // Added
                <a [routerLink]="banner.link" class="inline-flex items-center gap-2 bg-white text-brand-dark px-6 py-2.5 rounded-full font-bold text-xs md:text-sm hover:bg-brand-pink hover:text-white transition-all shadow-md self-start">
                  Conferir <app-icon name="chevron-right" size="16px"></app-icon>
                </a>
-            </div>
+             </div>
             @if (topBanners().length > 1) {
-              <button (click)="prevCatalogBanner('top')" class="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/35 text-white backdrop-blur hover:bg-black/50 transition-colors">
+              <button (click)="prevCatalogBanner('top')" class="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-10 text-white/90 hover:text-white transition-colors drop-shadow-[0_2px_6px_rgba(0,0,0,0.65)] p-1">
                 <app-icon name="chevron-left" size="18px"></app-icon>
               </button>
-              <button (click)="nextCatalogBanner('top')" class="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/35 text-white backdrop-blur hover:bg-black/50 transition-colors">
+              <button (click)="nextCatalogBanner('top')" class="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-10 text-white/90 hover:text-white transition-colors drop-shadow-[0_2px_6px_rgba(0,0,0,0.65)] p-1">
                 <app-icon name="chevron-right" size="18px"></app-icon>
               </button>
-              <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-black/20 rounded-full px-2.5 py-1">
+              <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
                 @for (item of topBanners(); track item.id; let i = $index) {
                   <button (click)="goToCatalogBanner('top', i)" class="w-2 h-2 rounded-full border border-white/70" [ngClass]="i === topBannerIndex() ? 'bg-white' : 'bg-white/30'"></button>
                 }
@@ -196,13 +196,13 @@ import { Title } from '@angular/platform-browser'; // Added
                       <span class="text-xs font-bold bg-white/20 backdrop-blur-md px-3 py-1 rounded-full self-start border border-white/30">Ver Oferta</span>
                    </div>
                    @if (sidebarBanners().length > 1) {
-                     <button (click)="prevCatalogBanner('sidebar'); $event.preventDefault(); $event.stopPropagation();" class="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/35 text-white backdrop-blur hover:bg-black/50 transition-colors">
+                     <button (click)="prevCatalogBanner('sidebar'); $event.preventDefault(); $event.stopPropagation();" class="absolute left-1.5 top-1/2 -translate-y-1/2 z-10 text-white/90 hover:text-white transition-colors drop-shadow-[0_2px_6px_rgba(0,0,0,0.65)] p-1">
                        <app-icon name="chevron-left" size="14px"></app-icon>
                      </button>
-                     <button (click)="nextCatalogBanner('sidebar'); $event.preventDefault(); $event.stopPropagation();" class="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/35 text-white backdrop-blur hover:bg-black/50 transition-colors">
+                     <button (click)="nextCatalogBanner('sidebar'); $event.preventDefault(); $event.stopPropagation();" class="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 text-white/90 hover:text-white transition-colors drop-shadow-[0_2px_6px_rgba(0,0,0,0.65)] p-1">
                        <app-icon name="chevron-right" size="14px"></app-icon>
                      </button>
-                     <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 bg-black/20 rounded-full px-2 py-1">
+                     <div class="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5">
                        @for (item of sidebarBanners(); track item.id; let i = $index) {
                          <button (click)="goToCatalogBanner('sidebar', i); $event.preventDefault(); $event.stopPropagation();" class="w-1.5 h-1.5 rounded-full border border-white/70" [ngClass]="i === sidebarBannerIndex() ? 'bg-white' : 'bg-white/30'"></button>
                        }

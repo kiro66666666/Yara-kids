@@ -25,12 +25,20 @@ export class SupabaseService {
   // --- STORAGE (Imagens) ---
 
   async uploadImage(file: File, folder: string = 'products'): Promise<string | null> {
+    return this.uploadFile(file, folder, 'images');
+  }
+
+  async uploadVideo(file: File, folder: string = 'videos'): Promise<string | null> {
+    return this.uploadFile(file, folder, 'images');
+  }
+
+  async uploadFile(file: File, folder: string = 'products', bucket: string = 'images'): Promise<string | null> {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
       const { data, error } = await this.supabase.storage
-        .from('images') // Nome do Bucket criado no painel
+        .from(bucket) // Nome do Bucket criado no painel
         .upload(fileName, file);
 
       if (error) {
@@ -40,7 +48,7 @@ export class SupabaseService {
 
       // Gerar URL pública
       const { data: publicUrlData } = this.supabase.storage
-        .from('images')
+        .from(bucket)
         .getPublicUrl(fileName);
 
       return publicUrlData.publicUrl;

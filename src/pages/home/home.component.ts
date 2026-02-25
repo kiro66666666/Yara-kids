@@ -64,13 +64,13 @@ import { SeoService } from '../../services/seo.service';
         </div>
 
         @if (heroBanners().length > 1) {
-          <button (click)="prevBanner('hero')" class="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/30 text-white backdrop-blur hover:bg-black/50 transition-colors">
+          <button (click)="prevBanner('hero')" class="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-30 text-white/90 hover:text-white transition-colors drop-shadow-[0_2px_6px_rgba(0,0,0,0.65)] p-1">
             <app-icon name="chevron-left" size="20px"></app-icon>
           </button>
-          <button (click)="nextBanner('hero')" class="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/30 text-white backdrop-blur hover:bg-black/50 transition-colors">
+          <button (click)="nextBanner('hero')" class="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-30 text-white/90 hover:text-white transition-colors drop-shadow-[0_2px_6px_rgba(0,0,0,0.65)] p-1">
             <app-icon name="chevron-right" size="20px"></app-icon>
           </button>
-          <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-full backdrop-blur">
+          <div class="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2">
             @for (item of heroBanners(); track item.id; let i = $index) {
               <button (click)="goToBanner('hero', i)" class="w-2.5 h-2.5 rounded-full border border-white/70 transition-colors"
                       [ngClass]="i === heroIndex() ? 'bg-white' : 'bg-white/30'"></button>
@@ -239,13 +239,13 @@ import { SeoService } from '../../services/seo.service';
            </div>
 
            @if (promoBanners().length > 1) {
-             <button (click)="prevBanner('promo')" class="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 text-white backdrop-blur hover:bg-black/50 transition-colors">
+             <button (click)="prevBanner('promo')" class="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 text-white/90 hover:text-white transition-colors drop-shadow-[0_2px_6px_rgba(0,0,0,0.65)] p-1">
                <app-icon name="chevron-left" size="20px"></app-icon>
              </button>
-             <button (click)="nextBanner('promo')" class="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 text-white backdrop-blur hover:bg-black/50 transition-colors">
+             <button (click)="nextBanner('promo')" class="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 text-white/90 hover:text-white transition-colors drop-shadow-[0_2px_6px_rgba(0,0,0,0.65)] p-1">
                <app-icon name="chevron-right" size="20px"></app-icon>
              </button>
-             <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/10 px-3 py-1.5 rounded-full backdrop-blur">
+             <div class="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
                @for (item of promoBanners(); track item.id; let i = $index) {
                  <button (click)="goToBanner('promo', i)" class="w-2.5 h-2.5 rounded-full border border-gray-500/50 transition-colors"
                          [ngClass]="i === promoIndex() ? 'bg-gray-700 dark:bg-white' : 'bg-white/60 dark:bg-gray-500'"></button>
