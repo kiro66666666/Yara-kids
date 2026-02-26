@@ -32,13 +32,13 @@ import { IconComponent } from '../ui/icons';
       </div>
 
       <!-- Share Button (Left of Heart) -->
-      <button type="button" (pointerdown)="blockCardInteraction($event)" (click)="openShare($event)" class="absolute top-3 right-14 z-20 w-9 h-9 bg-white dark:bg-brand-darkbg text-gray-400 rounded-full flex items-center justify-center hover:text-brand-pink hover:scale-110 transition-all shadow-sm active:scale-90 border border-transparent hover:border-brand-pink/20 touch-manipulation">
+      <button type="button" (pointerdown)="blockCardInteraction($event)" (click)="openShare($event)" class="absolute top-3 right-14 z-20 w-9 h-9 bg-white dark:bg-brand-darkbg text-gray-600 dark:text-gray-300 rounded-full flex items-center justify-center hover:text-brand-pink hover:scale-110 transition-all shadow-sm active:scale-90 border border-transparent hover:border-brand-pink/20 touch-manipulation" aria-label="Compartilhar produto">
         <app-icon name="share" size="16px"></app-icon>
       </button>
 
       <!-- Favorite Button -->
-      <button type="button" (pointerdown)="blockCardInteraction($event)" (click)="toggleFavorite($event)" class="absolute top-3 right-3 z-10 w-9 h-9 bg-white dark:bg-brand-darkbg rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-sm active:scale-90 touch-manipulation"
-        [class.text-red-500]="isFav()" [class.text-gray-300]="!isFav()">
+      <button type="button" (pointerdown)="blockCardInteraction($event)" (click)="toggleFavorite($event)" class="absolute top-3 right-3 z-20 w-9 h-9 bg-white dark:bg-brand-darkbg rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-sm active:scale-90 touch-manipulation border border-gray-100 dark:border-gray-700"
+        [class.text-red-500]="isFav()" [class.text-gray-600]="!isFav()" [class.dark:text-gray-300]="!isFav()" aria-label="Favoritar produto">
         <app-icon name="heart" size="18px" [class.fill-current]="isFav()"></app-icon>
       </button>
 
@@ -223,7 +223,7 @@ export class ProductCardComponent {
   shareWhatsApp() {
     const p = this.product();
     const url = this.getProductUrl();
-    const msg = `Olha que lindo da YARA Kids! 🎀\n\n${p.name}\nPor R$ ${p.price.toFixed(2)}\n\nConfira aqui: ${url}`;
+    const msg = `Olha que lindo da YARA Kids!\n\n${p.name}\nPor R$ ${p.price.toFixed(2)}\n\nConfira aqui: ${url}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
     this.closeShare();
   }

@@ -101,11 +101,16 @@ import { ProductCardComponent } from '../../components/product-card.component';
 
             <!-- Product Info Section -->
             <div class="flex flex-col">
-              <div class="flex justify-between items-start">
+              <div class="flex justify-between items-start gap-3">
                 <h1 class="text-2xl lg:text-4xl font-black text-brand-dark dark:text-white mb-2 leading-tight">{{ product()!.name }}</h1>
-                <button (click)="toggleFavorite()" class="p-3 rounded-full bg-gray-50 dark:bg-gray-800 hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-colors" [class.text-brand-pink]="store.isFavorite(product()!.id)" [class.text-gray-300]="!store.isFavorite(product()!.id)">
-                  <app-icon name="heart" size="24px" [class.fill-current]="store.isFavorite(product()!.id)"></app-icon>
-                </button>
+                <div class="flex items-center gap-2">
+                  <button (click)="openShare()" class="p-3 rounded-full bg-gray-50 dark:bg-gray-800 hover:bg-brand-soft dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-700" aria-label="Compartilhar produto">
+                    <app-icon name="share" size="22px"></app-icon>
+                  </button>
+                  <button (click)="toggleFavorite()" class="p-3 rounded-full bg-gray-50 dark:bg-gray-800 hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-colors border border-gray-100 dark:border-gray-700" [class.text-brand-pink]="store.isFavorite(product()!.id)" [class.text-gray-600]="!store.isFavorite(product()!.id)" [class.dark:text-gray-300]="!store.isFavorite(product()!.id)" aria-label="Favoritar produto">
+                    <app-icon name="heart" size="24px" [class.fill-current]="store.isFavorite(product()!.id)"></app-icon>
+                  </button>
+                </div>
               </div>
               
               <div class="flex items-center gap-3 mb-6">
@@ -215,10 +220,13 @@ import { ProductCardComponent } from '../../components/product-card.component';
                 <app-notify-stock [productName]="product()!.name"></app-notify-stock>
               }
               
-              <!-- Share -->
-              <div class="mt-8 flex justify-center lg:justify-start">
+              <!-- Share Actions -->
+              <div class="mt-8 flex justify-center lg:justify-start gap-3">
                 <button (click)="shareWhatsApp()" class="text-green-600 font-bold text-sm flex items-center gap-2 hover:underline bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-full border border-green-100 dark:border-green-900/30">
-                  <span class="w-6 h-6 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center">📱</span> Compartilhar no WhatsApp
+                  <app-icon name="whatsapp" size="18px"></app-icon> Compartilhar no WhatsApp
+                </button>
+                <button (click)="copyLink()" class="text-gray-700 dark:text-gray-300 font-bold text-sm flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <app-icon name="link" size="18px"></app-icon> {{ linkCopied() ? 'Link copiado' : 'Copiar link' }}
                 </button>
               </div>
 
@@ -342,6 +350,33 @@ import { ProductCardComponent } from '../../components/product-card.component';
       <!-- Size Guide Modal -->
       <app-size-guide [isOpen]="showSizeGuide()" (close)="showSizeGuide.set(false)"></app-size-guide>
 
+      @if (showShareModal()) {
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" (click)="closeShare()">
+          <div class="bg-white dark:bg-brand-darksurface rounded-2xl w-full max-w-xs shadow-2xl p-6 relative animate-slide-up border border-gray-100 dark:border-gray-700" (click)="$event.stopPropagation()">
+            <button type="button" (click)="closeShare()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white">
+              <app-icon name="x" size="20px"></app-icon>
+            </button>
+
+            <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4 text-center">Compartilhar</h3>
+
+            <div class="flex flex-col gap-3">
+              <button type="button" (click)="shareWhatsApp()" class="flex items-center gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors font-bold text-sm">
+                <app-icon name="whatsapp" size="20px"></app-icon>
+                <span>Enviar no WhatsApp</span>
+              </button>
+
+              <button type="button" (click)="copyLink()" class="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-bold text-sm relative">
+                <app-icon name="link" size="20px"></app-icon>
+                <span>{{ linkCopied() ? 'Link Copiado!' : 'Copiar Link' }}</span>
+                @if(linkCopied()) {
+                  <span class="absolute right-3 text-green-500"><app-icon name="check" size="16px"></app-icon></span>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
     } @else {
       <div class="min-h-screen flex flex-col items-center justify-center bg-brand-light dark:bg-brand-darkbg">
         <div class="w-16 h-16 border-4 border-brand-pink border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -380,6 +415,8 @@ export class ProductDetailComponent implements OnInit {
   currentImage = signal<string | null>(null);
   showVideo = signal(false);
   showSizeGuide = signal<boolean>(false);
+  showShareModal = signal<boolean>(false);
+  linkCopied = signal<boolean>(false);
 
   // Zoom Logic
   zoomOrigin = '50% 50%';
@@ -610,11 +647,33 @@ export class ProductDetailComponent implements OnInit {
     }
   }
 
+  openShare() {
+    this.showShareModal.set(true);
+  }
+
+  closeShare() {
+    this.showShareModal.set(false);
+    this.linkCopied.set(false);
+  }
+
+  getProductUrl() {
+    return `${window.location.origin}/#/produto/${this.productId()}`;
+  }
+
   shareWhatsApp() {
     const p = this.product();
     if(!p) return;
-    const msg = `🎀 Olha que lindo da *YARA Kids*!\n\n👗 *${p.name}*\n💰 Por apenas *R$ ${p.price.toFixed(2)}*\n\n🛒 Compre agora: ${window.location.href}`;
+    const msg = `Olha que lindo da YARA Kids!\n\n${p.name}\nPor apenas R$ ${p.price.toFixed(2)}\n\nCompre agora: ${this.getProductUrl()}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    this.closeShare();
+  }
+
+  copyLink() {
+    const url = this.getProductUrl();
+    navigator.clipboard.writeText(url).then(() => {
+      this.linkCopied.set(true);
+      setTimeout(() => this.closeShare(), 1200);
+    });
   }
 
   handleImageError(event: any) {
