@@ -32,12 +32,12 @@ import { IconComponent } from '../ui/icons';
       </div>
 
       <!-- Share Button (Left of Heart) -->
-      <button type="button" (pointerdown)="blockCardInteraction($event)" (click)="openShare($event)" class="absolute top-3 right-14 z-20 w-9 h-9 bg-white dark:bg-brand-darkbg text-gray-600 dark:text-gray-300 rounded-full flex items-center justify-center hover:text-brand-pink hover:scale-110 transition-all shadow-sm active:scale-90 border border-transparent hover:border-brand-pink/20 touch-manipulation" aria-label="Compartilhar produto">
+      <button type="button" (click)="openShare($event)" class="absolute top-3 right-14 z-40 w-9 h-9 bg-white dark:bg-brand-darkbg text-gray-600 dark:text-gray-300 rounded-full flex items-center justify-center hover:text-brand-pink hover:scale-110 transition-all shadow-sm active:scale-90 border border-transparent hover:border-brand-pink/20 touch-manipulation" aria-label="Compartilhar produto">
         <app-icon name="share" size="16px"></app-icon>
       </button>
 
       <!-- Favorite Button -->
-      <button type="button" (pointerdown)="blockCardInteraction($event)" (click)="toggleFavorite($event)" class="absolute top-3 right-3 z-20 w-9 h-9 bg-white dark:bg-brand-darkbg rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-sm active:scale-90 touch-manipulation border border-gray-100 dark:border-gray-700"
+      <button type="button" (click)="toggleFavorite($event)" class="absolute top-3 right-3 z-40 w-9 h-9 bg-white dark:bg-brand-darkbg rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-sm active:scale-90 touch-manipulation border border-gray-100 dark:border-gray-700"
         [class.text-red-500]="isFav()" [class.text-gray-600]="!isFav()" [class.dark:text-gray-300]="!isFav()" aria-label="Favoritar produto">
         <app-icon name="heart" size="18px" [class.fill-current]="isFav()"></app-icon>
       </button>
@@ -66,7 +66,7 @@ import { IconComponent } from '../ui/icons';
         }
         
         <!-- Overlay on Hover (Desktop) -->
-        <div class="hidden lg:block absolute inset-0 bg-black/5 dark:bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20"></div>
+        <div class="hidden lg:block absolute inset-0 bg-black/5 dark:bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 pointer-events-none"></div>
 
         <!-- Desktop Quick View Button -->
         <div class="hidden lg:flex absolute bottom-4 left-0 right-0 justify-center opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300 px-4 z-30">
@@ -203,11 +203,6 @@ export class ProductCardComponent {
     event.preventDefault();
     event.stopPropagation();
     this.showShareModal.set(true);
-  }
-
-  blockCardInteraction(event: Event) {
-    event.preventDefault();
-    event.stopPropagation();
   }
 
   closeShare() {

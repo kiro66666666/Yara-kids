@@ -247,11 +247,19 @@ export class AccountComponent {
   }
 
   async installApp() {
-    const installed = await this.pwa.installPwa();
-    if (installed) {
+    const result = await this.pwa.attemptInstall();
+
+    if (result.status === 'installed') {
       this.store.showToast('Aplicativo instalado com sucesso!', 'success');
       return;
     }
+
+    if (result.status === 'dismissed') {
+      this.store.showToast(result.message, 'info');
+      return;
+    }
+
+    this.store.showToast(result.message, 'info');
     this.installHint.set(this.pwa.getManualInstallHint(this.pwa.getRecommendedTarget()));
     this.showInstallChooser.set(true);
   }
@@ -264,11 +272,16 @@ export class AccountComponent {
       return;
     }
 
-    const installed = await this.pwa.installPwa();
-    if (installed) {
+    const result = await this.pwa.attemptInstall();
+    if (result.status === 'installed') {
       this.store.showToast('Aplicativo instalado com sucesso!', 'success');
       this.showInstallChooser.set(false);
       this.installHint.set('');
+      return;
+    }
+
+    if (result.status === 'dismissed') {
+      this.store.showToast(result.message, 'info');
       return;
     }
 

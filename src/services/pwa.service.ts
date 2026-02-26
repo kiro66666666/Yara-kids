@@ -1,6 +1,12 @@
 import { Injectable, signal } from '@angular/core';
 
 export type InstallTarget = 'desktop' | 'android' | 'ios';
+export type InstallAttemptStatus = 'installed' | 'dismissed' | 'unavailable' | 'error';
+
+export interface InstallAttemptResult {
+  status: InstallAttemptStatus;
+  message: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -46,18 +52,33 @@ export class PwaService {
     });
   }
 
-  async installPwa(): Promise<boolean> {
+  async attemptInstall(): Promise<InstallAttemptResult> {
     this.showInstallPromotion.set(false);
 
     if (this.deferredPrompt) {
-      await this.deferredPrompt.prompt();
-      const choiceResult = await this.deferredPrompt.userChoice;
-      this.deferredPrompt = null;
-      return choiceResult.outcome === 'accepted';
+      try {
+        await this.deferredPrompt.prompt();
+        const choiceResult = await this.deferredPrompt.userChoice;
+        this.deferredPrompt = null;
+
+        if (choiceResult?.outcome === 'accepted') {
+          return { status: 'installed', message: 'Aplicativo instalado com sucesso!' };
+        }
+
+        return { status: 'dismissed', message: 'Instalacao cancelada pelo usuario.' };
+      } catch {
+        this.deferredPrompt = null;
+        return { status: 'error', message: 'Falha ao abrir o instalador do navegador.' };
+      }
     }
 
     this.installSource.set('manual');
-    return false;
+    return { status: 'unavailable', message: 'Instalacao automatica indisponivel neste navegador.' };
+  }
+
+  async installPwa(): Promise<boolean> {
+    const result = await this.attemptInstall();
+    return result.status === 'installed';
   }
 
   getRecommendedTarget(): InstallTarget {

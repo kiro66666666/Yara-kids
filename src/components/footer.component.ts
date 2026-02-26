@@ -178,7 +178,8 @@ export class FooterComponent {
     if (result.ok) {
       this.isSubscribed = true;
       this.email = '';
-      this.store.showToast(result.message, result.status === 'already_exists' ? 'info' : 'success');
+      const toastType = (result.status === 'already_exists' || result.status === 'queued') ? 'info' : 'success';
+      this.store.showToast(result.message, toastType);
       return;
     }
 

@@ -69,8 +69,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'YARA Kids';
   const options = {
     body: data.body || 'Atualizacoes da sua loja infantil favorita.',
-    icon: data.icon || '/manifest.json',
-    badge: data.badge || '/manifest.json',
+    icon: data.icon || '/icons/icon-192.png',
+    badge: data.badge || '/icons/icon-192.png',
     image: data.image,
     data: {
       deeplink: data.deeplink || '/#/minha-conta',

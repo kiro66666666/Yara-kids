@@ -26,7 +26,7 @@ serve(async (req) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
     const RESEND_FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "YARA Kids <onboarding@resend.dev>";
-    const NEWSLETTER_COUPON_CODE = Deno.env.get("NEWSLETTER_COUPON_CODE") || "BEMVINDA10";
+    const NEWSLETTER_COUPON_CODE = Deno.env.get("NEWSLETTER_COUPON_CODE") || "WELCOME10";
     const NEWSLETTER_COUPON_PERCENT = Deno.env.get("NEWSLETTER_COUPON_PERCENT") || "10";
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -39,7 +39,7 @@ serve(async (req) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(email)) {
-      return json({ ok: false, status: "invalid_email", message: "Digite um e-mail válido." }, 400);
+      return json({ ok: false, status: "invalid_email", message: "Digite um e-mail valido." });
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -52,7 +52,7 @@ serve(async (req) => {
     });
 
     if (!rate.allowed) {
-      return json({ ok: false, message: "Muitas tentativas. Tente novamente em instantes." }, 429);
+      return json({ ok: false, status: "error", message: "Muitas tentativas. Tente novamente em instantes." }, 429);
     }
 
     const { data: existing } = await supabase
@@ -65,7 +65,7 @@ serve(async (req) => {
       return json({
         ok: true,
         status: "already_exists",
-        message: "Este e-mail já está cadastrado na newsletter.",
+        message: "Este e-mail ja esta cadastrado na newsletter.",
       });
     }
 
@@ -81,7 +81,7 @@ serve(async (req) => {
       return json({
         ok: false,
         status: "error",
-        message: "Não foi possível salvar sua inscrição agora.",
+        message: "Nao foi possivel salvar sua inscricao agora.",
         detail: insertError.message,
       }, 500);
     }
@@ -90,8 +90,8 @@ serve(async (req) => {
       return json({
         ok: false,
         status: "mail_failed",
-        message: "Cadastro salvo, mas envio de e-mail indisponível. Configure RESEND_API_KEY.",
-      }, 500);
+        message: "Cadastro salvo, mas envio de e-mail indisponivel. Configure RESEND_API_KEY.",
+      });
     }
 
     const html = `
@@ -99,18 +99,18 @@ serve(async (req) => {
         <div style="max-width:580px;margin:0 auto;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e5e7eb;">
           <div style="padding:24px 28px;background:linear-gradient(90deg,#ff69b4,#9b7ede);color:#ffffff;">
             <p style="margin:0;font-size:12px;letter-spacing:1px;font-weight:700;text-transform:uppercase;">YARA Kids</p>
-            <h1 style="margin:8px 0 0;font-size:26px;line-height:1.2;">Seu cupom chegou 🎁</h1>
+            <h1 style="margin:8px 0 0;font-size:26px;line-height:1.2;">Seu cupom chegou!</h1>
           </div>
           <div style="padding:28px;">
             <p style="margin:0 0 14px;font-size:15px;line-height:1.7;">Obrigada por entrar na nossa newsletter.</p>
-            <p style="margin:0 0 18px;font-size:15px;line-height:1.7;">Use o cupom abaixo e ganhe desconto na sua próxima compra:</p>
+            <p style="margin:0 0 18px;font-size:15px;line-height:1.7;">Use o cupom abaixo e ganhe desconto na sua proxima compra:</p>
             <div style="padding:16px;border:2px dashed #ff69b4;border-radius:14px;background:#fff6fb;text-align:center;">
               <p style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6b7280;">Cupom de boas-vindas</p>
               <p style="margin:0;font-size:30px;font-weight:800;letter-spacing:1px;color:#db2777;">${NEWSLETTER_COUPON_CODE}</p>
               <p style="margin:10px 0 0;font-size:13px;color:#4b5563;">${NEWSLETTER_COUPON_PERCENT}% OFF em produtos selecionados.</p>
             </div>
             <p style="margin:20px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
-              Se você não solicitou esse cadastro, apenas ignore esta mensagem.
+              Se voce nao solicitou esse cadastro, apenas ignore esta mensagem.
             </p>
           </div>
         </div>
@@ -138,13 +138,13 @@ serve(async (req) => {
         status: "mail_failed",
         message: "E-mail salvo, mas houve falha ao enviar o cupom.",
         detail,
-      }, 502);
+      });
     }
 
     return json({
       ok: true,
       status: "mail_sent",
-      message: "Inscrição confirmada! Cupom enviado para seu e-mail.",
+      message: "Inscricao confirmada! Cupom enviado para seu e-mail.",
     });
   } catch (error) {
     return json({

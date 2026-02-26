@@ -1,6 +1,7 @@
 import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PwaService } from '../services/pwa.service';
+import { StoreService } from '../services/store.service';
 import { IconComponent } from '../ui/icons';
 
 @Component({
@@ -77,6 +78,7 @@ import { IconComponent } from '../ui/icons';
 })
 export class InstallPromptComponent implements OnInit {
   pwa = inject(PwaService);
+  store = inject(StoreService);
   canShow = signal(false);
   showChooser = signal(false);
   installHint = signal('');
@@ -95,8 +97,17 @@ export class InstallPromptComponent implements OnInit {
   }
 
   async startInstall() {
-    const installed = await this.pwa.installPwa();
-    if (installed) return;
+    const result = await this.pwa.attemptInstall();
+    if (result.status === 'installed') {
+      this.store.showToast(result.message, 'success');
+      return;
+    }
+    if (result.status === 'dismissed') {
+      this.store.showToast(result.message, 'info');
+      return;
+    }
+
+    this.store.showToast(result.message, 'info');
     this.installHint.set(this.pwa.getManualInstallHint(this.pwa.getRecommendedTarget()));
     this.showChooser.set(true);
   }
@@ -104,22 +115,35 @@ export class InstallPromptComponent implements OnInit {
   async installByTarget(target: 'desktop' | 'android' | 'ios') {
     if (target === 'ios') {
       this.installHint.set(this.pwa.getManualInstallHint('ios'));
+      this.store.showToast(this.pwa.getManualInstallHint('ios'), 'info');
       return;
     }
 
-    const installed = await this.pwa.installPwa();
-    if (installed) {
+    const result = await this.pwa.attemptInstall();
+    if (result.status === 'installed') {
+      this.store.showToast(result.message, 'success');
       this.showChooser.set(false);
       this.installHint.set('');
       return;
     }
 
+    if (result.status === 'dismissed') {
+      this.store.showToast(result.message, 'info');
+      return;
+    }
+
     if (target === 'desktop') {
-      this.pwa.downloadDesktopShortcut();
+      const shortcut = this.pwa.downloadDesktopShortcut();
+      if (shortcut) {
+        this.store.showToast('Atalho do site baixado para o PC.', 'success');
+      } else {
+        this.store.showToast(this.pwa.getManualInstallHint('desktop'), 'info');
+      }
       this.installHint.set(this.pwa.getManualInstallHint('desktop'));
       return;
     }
 
     this.installHint.set(this.pwa.getManualInstallHint('android'));
+    this.store.showToast(this.pwa.getManualInstallHint('android'), 'info');
   }
 }

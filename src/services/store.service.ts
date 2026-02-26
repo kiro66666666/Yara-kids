@@ -489,6 +489,7 @@ export class StoreService {
   private authSyncInitialized = false;
   private settingsRealtimeInitialized = false;
   private readonly missingTableWarnings = new Set<string>();
+  private manifestObjectUrl: string | null = null;
 
   // --- Computed ---
   cartTotal = computed(() => Math.max(0, this.cart().reduce((acc, item) => acc + (item.price * item.quantity), 0)));
@@ -746,15 +747,42 @@ export class StoreService {
 
   // --- GLOBAL ICON / IDENTITY MANAGER ---
   private updateFavicon(url: string) {
+    const iconVersion = this.institutional().iconVersion || Date.now();
+    const versionedIcon = this.buildVersionedIconUrl(url, iconVersion);
+    const fallbackIcon = '/icons/icon-192.png';
+    const finalIcon = versionedIcon || fallbackIcon;
+
     const icon = document.getElementById('appIcon') as HTMLLinkElement;
     const appleIcon = document.getElementById('appAppleIcon') as HTMLLinkElement;
     
-    if (icon) icon.href = url;
-    if (appleIcon) appleIcon.href = url;
-    this.updateDynamicManifest(url, this.institutional().iconVersion || Date.now());
+    if (icon) icon.href = finalIcon;
+    if (appleIcon) appleIcon.href = finalIcon;
+    this.updateDynamicManifest(url, iconVersion);
+  }
+
+  private buildVersionedIconUrl(iconUrl: string, iconVersion: number): string | null {
+    if (!iconUrl) return null;
+
+    const trimmed = iconUrl.trim();
+    if (!trimmed) return null;
+    if (!(trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/') || trimmed.startsWith('data:'))) {
+      return null;
+    }
+
+    const separator = trimmed.includes('?') ? '&' : '?';
+    return `${trimmed}${separator}v=${iconVersion}`;
   }
 
   private updateDynamicManifest(iconUrl: string, iconVersion: number) {
+    const versionedIcon = this.buildVersionedIconUrl(iconUrl, iconVersion);
+    const dynamicIcons = versionedIcon
+      ? [
+          { src: versionedIcon, sizes: '192x192', type: 'image/png' },
+          { src: versionedIcon, sizes: '512x512', type: 'image/png' },
+          { src: versionedIcon, sizes: '192x192', type: 'image/png', purpose: 'maskable' }
+        ]
+      : [];
+
     const manifest = {
       name: 'YARA Kids - Moda Infantil',
       short_name: 'YARA Kids',
@@ -765,14 +793,21 @@ export class StoreService {
       orientation: 'portrait-primary',
       scope: '/',
       icons: [
-        { src: `${iconUrl}?v=${iconVersion}`, sizes: '192x192', type: 'image/png' },
-        { src: `${iconUrl}?v=${iconVersion}`, sizes: '512x512', type: 'image/png' },
-        { src: `${iconUrl}?v=${iconVersion}`, sizes: '192x192', type: 'image/png', purpose: 'maskable' }
+        ...dynamicIcons,
+        { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+        { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+        { src: '/icons/icon-192-maskable.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' }
       ]
     };
 
+    if (this.manifestObjectUrl) {
+      URL.revokeObjectURL(this.manifestObjectUrl);
+      this.manifestObjectUrl = null;
+    }
+
     const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
     const url = URL.createObjectURL(blob);
+    this.manifestObjectUrl = url;
     const existing = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
     if (existing) {
       existing.href = url;
@@ -1200,10 +1235,32 @@ export class StoreService {
     }
 
     try {
-      const response = await this.supabase.callFunction('newsletter-subscribe', {
-        email: normalizedEmail,
-        source: 'footer'
+      const { data, error } = await this.supabase.supabase.functions.invoke('newsletter-subscribe', {
+        body: {
+          email: normalizedEmail,
+          source: 'footer'
+        }
       });
+
+      if (error) {
+        const parsed = await this.parseNewsletterFunctionError(error);
+        if (parsed) {
+          return parsed;
+        }
+
+        if (this.shouldUseNewsletterFallback(error)) {
+          console.error('Erro de transporte na newsletter, aplicando fallback', error);
+          return this.fallbackNewsletterInsert(normalizedEmail);
+        }
+
+        return {
+          ok: false,
+          status: 'error',
+          message: 'Não foi possível concluir sua inscrição agora.'
+        };
+      }
+
+      const response = data as any;
 
       if (response?.ok) {
         return {
@@ -1225,7 +1282,7 @@ export class StoreService {
         return {
           ok: false,
           status: 'mail_failed',
-          message: response.message || 'E-mail salvo, mas houve falha ao enviar a mensagem.'
+          message: response.message || 'Cadastro salvo, mas houve falha ao enviar o e-mail.'
         };
       }
 
@@ -1236,8 +1293,64 @@ export class StoreService {
       };
     } catch (e) {
       console.error('Erro ao inscrever newsletter', e);
-      return this.fallbackNewsletterInsert(normalizedEmail);
+      if (this.shouldUseNewsletterFallback(e)) {
+        return this.fallbackNewsletterInsert(normalizedEmail);
+      }
+      return {
+        ok: false,
+        status: 'error',
+        message: 'Não foi possível concluir sua inscrição agora.'
+      };
     }
+  }
+
+  private async parseNewsletterFunctionError(error: any): Promise<NewsletterSubscribeResult | null> {
+    try {
+      const context = error?.context;
+      if (!context) return null;
+
+      const payload = await context.clone().json();
+      if (!payload || typeof payload !== 'object') return null;
+      const parsed = payload as any;
+
+      if (parsed.status === 'already_exists') {
+        return {
+          ok: true,
+          status: 'already_exists',
+          message: parsed.message || 'Este e-mail já está cadastrado.'
+        };
+      }
+
+      if (parsed.status === 'invalid_email') {
+        return {
+          ok: false,
+          status: 'invalid_email',
+          message: parsed.message || 'Digite um e-mail válido.'
+        };
+      }
+
+      if (parsed.status === 'mail_failed') {
+        return {
+          ok: false,
+          status: 'mail_failed',
+          message: parsed.message || 'Cadastro salvo, mas houve falha ao enviar o e-mail.'
+        };
+      }
+    } catch {
+      // Ignora parse errors e deixa o fluxo seguir para fallback/erro.
+    }
+
+    return null;
+  }
+
+  private shouldUseNewsletterFallback(error: any): boolean {
+    const name = String(error?.name || '');
+    if (name === 'FunctionsFetchError' || name === 'FunctionsRelayError') {
+      return true;
+    }
+
+    const message = String(error?.message || '').toLowerCase();
+    return message.includes('failed to fetch') || message.includes('network') || message.includes('fetch');
   }
 
   private async fallbackNewsletterInsert(email: string): Promise<NewsletterSubscribeResult> {
@@ -1251,8 +1364,8 @@ export class StoreService {
       if (inserted) {
         return {
           ok: true,
-          status: 'mail_sent',
-          message: 'Inscrição confirmada! Confira seu e-mail em instantes.'
+          status: 'queued',
+          message: 'Inscrição confirmada. Envio de e-mail pendente; vamos tentar novamente em seguida.'
         };
       }
     } catch (e: any) {
