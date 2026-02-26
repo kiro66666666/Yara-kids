@@ -20,7 +20,6 @@ bootstrapApplication(AppComponent, {
       navigator.serviceWorker.register('/service-worker.js')
         .then(registration => {
           console.log('SW registered: ', registration);
-          registration.update();
 
           // Force activation of fresh worker when available
           if (registration.waiting) {

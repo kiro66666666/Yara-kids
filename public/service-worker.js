@@ -1,14 +1,14 @@
 ﻿const CACHE_NAME = 'yara-kids-v3';
 const ASSETS_TO_CACHE = [
   '/',
-  '/index.html',
-  'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap'
+  '/index.html'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(ASSETS_TO_CACHE.map((asset) => cache.add(asset)))
+    )
   );
   self.skipWaiting();
 });
