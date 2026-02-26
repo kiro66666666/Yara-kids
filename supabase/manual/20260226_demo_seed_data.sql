@@ -122,8 +122,7 @@ set
   reviews = excluded.reviews,
   "isNew" = excluded."isNew",
   "isBestSeller" = excluded."isBestSeller",
-  description = excluded.description,
-  "updatedAt" = now();
+  description = excluded.description;
 
 -- 4) Banners
 insert into public.banners (
@@ -193,8 +192,7 @@ set
   "mediaType" = excluded."mediaType",
   "videoUrl" = excluded."videoUrl",
   "playAudioOnHover" = excluded."playAudioOnHover",
-  "order" = excluded."order",
-  "updatedAt" = now();
+  "order" = excluded."order";
 
 -- 5) Cupons
 insert into public.coupons (id, code, type, value, "minPurchase", active, description)
@@ -208,8 +206,7 @@ set
   value = excluded.value,
   "minPurchase" = excluded."minPurchase",
   active = excluded.active,
-  description = excluded.description,
-  "updatedAt" = now();
+  description = excluded.description;
 
 -- 6) FAQ
 insert into public.faqs (id, question, answer)
@@ -220,8 +217,7 @@ values
 on conflict (id) do update
 set
   question = excluded.question,
-  answer = excluded.answer,
-  "updatedAt" = now();
+  answer = excluded.answer;
 
 -- 7) Feedbacks/avaliacoes
 insert into public.feedbacks (id, name, rating, message, date)
@@ -301,8 +297,7 @@ set
   "shippingAddress" = excluded."shippingAddress",
   "paymentMethod" = excluded."paymentMethod",
   "userEmail" = excluded."userEmail",
-  "isGift" = excluded."isGift",
-  "updatedAt" = now();
+  "isGift" = excluded."isGift";
 
 -- 10) Instagram feed (imagem + video)
 insert into public.instagram_posts (id, image_url, likes, link, media_type, video_url, play_audio_on_hover)
@@ -316,7 +311,6 @@ set
   link = excluded.link,
   media_type = excluded.media_type,
   video_url = excluded.video_url,
-  play_audio_on_hover = excluded.play_audio_on_hover,
-  "updatedAt" = now();
+  play_audio_on_hover = excluded.play_audio_on_hover;
 
 commit;
