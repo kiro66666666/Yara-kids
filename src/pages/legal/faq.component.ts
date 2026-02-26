@@ -16,14 +16,14 @@ import { FormsModule } from '@angular/forms';
             <app-icon name="help-circle" size="32px"></app-icon>
           </div>
           <h1 class="text-3xl font-black text-gray-800 dark:text-white mb-4">Perguntas Frequentes</h1>
-          <p class="text-gray-600 dark:text-gray-400">Tire suas dúvidas sobre compras, entregas e produtos.</p>
+          <p class="text-gray-600 dark:text-gray-400">Tire suas duvidas sobre compras, entregas e produtos.</p>
         </div>
 
         <div class="mb-10 relative animate-slide-up">
            <input
              type="text"
              [(ngModel)]="searchTerm"
-             placeholder="O que você procura?"
+             placeholder="O que voce procura?"
              class="w-full p-4 pl-12 surface-input-light dark:bg-brand-darksurface dark:border-gray-700 rounded-2xl shadow-md focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none dark:text-white transition-all"
            >
            <app-icon name="search" size="20px" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400"></app-icon>
@@ -51,9 +51,9 @@ import { FormsModule } from '@angular/forms';
         </div>
 
         <div class="mt-12 text-center bg-white dark:bg-brand-darksurface p-8 rounded-3xl shadow-md border border-gray-200 dark:border-gray-700">
-          <p class="font-bold text-gray-800 dark:text-white mb-2">Não encontrou o que procurava?</p>
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">Nossa equipe de atendimento está pronta para te ajudar.</p>
-          <a href="https://wa.me/5594991334401" target="_blank" class="inline-flex items-center gap-2 px-8 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors shadow-lg shadow-green-200 dark:shadow-none hover:-translate-y-1 transform">
+          <p class="font-bold text-gray-800 dark:text-white mb-2">Nao encontrou o que procurava?</p>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">Nossa equipe de atendimento esta pronta para te ajudar.</p>
+          <a [href]="whatsappLink" target="_blank" class="inline-flex items-center gap-2 px-8 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors shadow-lg shadow-green-200 dark:shadow-none hover:-translate-y-1 transform">
             <app-icon name="whatsapp" size="18px"></app-icon> Falar no WhatsApp
           </a>
         </div>
@@ -65,6 +65,13 @@ export class FaqComponent {
   store = inject(StoreService);
   searchTerm = signal('');
 
+  get whatsappLink(): string {
+    const raw = this.store.institutional().whatsapp || '(94) 99133-4401';
+    const digits = raw.replace(/\D/g, '');
+    const normalized = digits ? (digits.startsWith('55') ? digits : `55${digits}`) : '5594991334401';
+    return `https://wa.me/${normalized}`;
+  }
+
   filteredFaqs = computed(() => {
     const term = this.searchTerm().toLowerCase();
     return this.store.faqs().filter(f =>
@@ -73,5 +80,3 @@ export class FaqComponent {
     );
   });
 }
-
-

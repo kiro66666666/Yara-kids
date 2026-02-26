@@ -614,10 +614,63 @@ export class StoreService {
     });
   }
 
+  private async getLatestSiteSettingsRow(): Promise<{ id: string; data: any } | null> {
+    const orderedQueries = [
+      this.supabase.supabase.from('site_settings').select('id,data').order('updated_at', { ascending: false }).limit(1),
+      this.supabase.supabase.from('site_settings').select('id,data').order('created_at', { ascending: false }).limit(1),
+      this.supabase.supabase.from('site_settings').select('id,data').order('id', { ascending: false }).limit(1),
+      this.supabase.supabase.from('site_settings').select('id,data').limit(1)
+    ];
+
+    let lastError: any = null;
+
+    for (const query of orderedQueries) {
+      const { data, error } = await query;
+      if (!error) {
+        return data?.[0] || null;
+      }
+
+      lastError = error;
+      const message = String(error?.message || '').toLowerCase();
+      const isMissingOrderColumn = message.includes('column') && message.includes('does not exist');
+      if (isMissingOrderColumn) {
+        continue;
+      }
+
+      const noRows = error?.code === 'PGRST116' || message.includes('0 rows');
+      if (noRows) {
+        return null;
+      }
+
+      throw error;
+    }
+
+    if (lastError) {
+      throw lastError;
+    }
+
+    return null;
+  }
+
+  private async upsertSiteSettingsData(nextData: Record<string, any>): Promise<void> {
+    const existing = await this.getLatestSiteSettingsRow();
+    if (existing?.id) {
+      const { error } = await this.supabase.supabase
+        .from('site_settings')
+        .update({ data: nextData })
+        .eq('id', existing.id);
+      if (error) throw error;
+      return;
+    }
+
+    const { error } = await this.supabase.supabase.from('site_settings').insert({ data: nextData });
+    if (error) throw error;
+  }
+
   private async initGlobalMode() {
     try {
-      const { data } = await this.supabase.supabase.from('site_settings').select('data').single();
-      const serverMode = data?.data?.appMode;
+      const existing = await this.getLatestSiteSettingsRow();
+      const serverMode = existing?.data?.appMode;
       if (serverMode === 'visual' || serverMode === 'real') {
         this.mode.set(serverMode);
       }
@@ -759,15 +812,10 @@ export class StoreService {
 
   private async persistGlobalMode(mode: 'visual' | 'real'): Promise<boolean> {
     try {
-      const { data: existing } = await this.supabase.supabase.from('site_settings').select('id,data').single();
+      const existing = await this.getLatestSiteSettingsRow();
       const currentData = existing?.data ?? {};
       const nextData = { ...currentData, appMode: mode };
-
-      if (existing?.id) {
-        await this.supabase.supabase.from('site_settings').update({ data: nextData }).eq('id', existing.id);
-      } else {
-        await this.supabase.supabase.from('site_settings').insert({ data: nextData });
-      }
+      await this.upsertSiteSettingsData(nextData);
 
       return true;
     } catch (e) {
@@ -873,22 +921,23 @@ export class StoreService {
 
   private async loadRealSettings() {
     try {
-      const { data } = await this.supabase.supabase.from('site_settings').select('data').single();
-      if (data?.data) {
+      const existing = await this.getLatestSiteSettingsRow();
+      const settingsData = existing?.data;
+      if (settingsData) {
         const normalizedAboutMedia = normalizeInstitutionalMedia(
-          data.data?.aboutMedia,
-          data.data?.aboutImage || DEFAULT_INSTITUTIONAL.aboutImage
+          settingsData?.aboutMedia,
+          settingsData?.aboutImage || DEFAULT_INSTITUTIONAL.aboutImage
         );
         const firstImage = normalizedAboutMedia.find(item => item.type === 'image')?.url;
         const merged = {
           ...DEFAULT_INSTITUTIONAL,
-          ...data.data,
-          logoUrl: data.data?.branding?.logoUrl || data.data?.logoUrl || DEFAULT_INSTITUTIONAL.logoUrl,
+          ...settingsData,
+          logoUrl: settingsData?.branding?.logoUrl || settingsData?.logoUrl || DEFAULT_INSTITUTIONAL.logoUrl,
           aboutMedia: normalizedAboutMedia,
-          aboutImage: firstImage || normalizedAboutMedia[0]?.url || data.data?.aboutImage || DEFAULT_INSTITUTIONAL.aboutImage,
-          iconVersion: data.data?.branding?.iconVersion || data.data?.iconVersion || Date.now(),
-          notificationsEnabled: data.data?.notifications?.enabled ?? true,
-          defaultDeepLink: data.data?.notifications?.defaultDeepLink || '/'
+          aboutImage: firstImage || normalizedAboutMedia[0]?.url || settingsData?.aboutImage || DEFAULT_INSTITUTIONAL.aboutImage,
+          iconVersion: settingsData?.branding?.iconVersion || settingsData?.iconVersion || Date.now(),
+          notificationsEnabled: settingsData?.notifications?.enabled ?? true,
+          defaultDeepLink: settingsData?.notifications?.defaultDeepLink || '/'
         };
         this.institutional.set(merged);
       }
@@ -947,8 +996,7 @@ export class StoreService {
     
     if (this.mode() === 'real') {
         try {
-            // Check if settings row exists
-            const { data: existing } = await this.supabase.supabase.from('site_settings').select('id,data').single();
+            const existing = await this.getLatestSiteSettingsRow();
             const currentData = existing?.data ?? {};
             const iconVersion = Date.now();
             const nextData = {
@@ -965,12 +1013,8 @@ export class StoreService {
                 defaultDeepLink: normalizedInstitutional.defaultDeepLink || '/'
               }
             };
-            
-            if (existing) {
-                await this.supabase.supabase.from('site_settings').update({ data: nextData }).eq('id', existing.id);
-            } else {
-                await this.supabase.supabase.from('site_settings').insert({ data: nextData });
-            }
+
+            await this.upsertSiteSettingsData(nextData);
             this.showToast('Configuracoes salvas no servidor!', 'success');
         } catch (e) {
             console.error('Erro ao salvar settings', e);
@@ -979,6 +1023,10 @@ export class StoreService {
     } else {
         this.showToast('Configuracoes salvas (Modo Visual)', 'success');
     }
+  }
+
+  async refreshInstitutionalSettings() {
+    await this.loadRealSettings();
   }
 
   // --- Instagram Management (Admin) ---

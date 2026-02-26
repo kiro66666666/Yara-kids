@@ -567,7 +567,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       this.tempSettings.aboutImage = normalizedMedia[0].url;
     }
 
-    this.store.updateInstitutional(this.tempSettings);
+    await this.store.updateInstitutional(this.tempSettings);
+    if (this.store.mode() === 'real') {
+      await this.store.refreshInstitutionalSettings();
+      this.tempSettings = { ...this.store.institutional() };
+    }
   }
 
   openCategoryModal(cat?: Category) { 

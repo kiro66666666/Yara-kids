@@ -14,6 +14,40 @@ import { Title } from '@angular/platform-browser';
   imports: [CommonModule, IconComponent],
   template: `
     <div class="min-h-screen bg-gray-50 dark:bg-brand-darkbg py-12 transition-colors duration-300">
+      @if (showInstallChooser()) {
+        <div class="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="w-full max-w-xl bg-white dark:bg-brand-darksurface rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+              <h3 class="font-black text-lg text-gray-800 dark:text-white">Instalar YARA Kids</h3>
+              <button (click)="showInstallChooser.set(false)" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-300">
+                <app-icon name="x" size="18px"></app-icon>
+              </button>
+            </div>
+            <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-3">
+              <button (click)="installByTarget('desktop')" class="p-4 rounded-2xl border border-gray-200 dark:border-gray-700 text-left hover:border-brand-pink/40 hover:bg-brand-soft/40 dark:hover:bg-brand-lilac/10 transition-colors">
+                <p class="font-bold text-gray-800 dark:text-white mb-1">PC</p>
+                <p class="text-xs text-gray-500 dark:text-gray-300">Instala app no navegador ou baixa atalho.</p>
+              </button>
+              <button (click)="installByTarget('android')" class="p-4 rounded-2xl border border-gray-200 dark:border-gray-700 text-left hover:border-brand-pink/40 hover:bg-brand-soft/40 dark:hover:bg-brand-lilac/10 transition-colors">
+                <p class="font-bold text-gray-800 dark:text-white mb-1">Android</p>
+                <p class="text-xs text-gray-500 dark:text-gray-300">Instalar app / adicionar à tela inicial.</p>
+              </button>
+              <button (click)="installByTarget('ios')" class="p-4 rounded-2xl border border-gray-200 dark:border-gray-700 text-left hover:border-brand-pink/40 hover:bg-brand-soft/40 dark:hover:bg-brand-lilac/10 transition-colors">
+                <p class="font-bold text-gray-800 dark:text-white mb-1">iOS</p>
+                <p class="text-xs text-gray-500 dark:text-gray-300">Compartilhar e adicionar à tela inicial.</p>
+              </button>
+            </div>
+            @if (installHint()) {
+              <div class="px-5 pb-5">
+                <p class="text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3">
+                  {{ installHint() }}
+                </p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
       <div class="container mx-auto px-6 max-w-5xl">
         <h1 class="text-3xl font-black text-gray-800 dark:text-white mb-8 flex items-center gap-3">
           <div class="w-2 h-8 bg-brand-pink rounded-full"></div> Minha Conta
@@ -150,6 +184,8 @@ export class AccountComponent {
 
   myOrders = this.store.orders; 
   avatarUploading = signal(false);
+  showInstallChooser = signal(false);
+  installHint = signal('');
 
   constructor() {
     this.title.setTitle('Minha Conta | YARA Kids');
@@ -172,9 +208,43 @@ export class AccountComponent {
 
   async installApp() {
     const installed = await this.pwa.installPwa();
-    if (!installed) {
-      this.store.showToast(this.pwa.getManualInstallHint(), 'info');
+    if (installed) {
+      this.store.showToast('Aplicativo instalado com sucesso!', 'success');
+      return;
     }
+    this.installHint.set(this.pwa.getManualInstallHint(this.pwa.getRecommendedTarget()));
+    this.showInstallChooser.set(true);
+  }
+
+  async installByTarget(target: 'desktop' | 'android' | 'ios') {
+    if (target === 'ios') {
+      const hint = this.pwa.getManualInstallHint('ios');
+      this.installHint.set(hint);
+      this.store.showToast(hint, 'info');
+      return;
+    }
+
+    const installed = await this.pwa.installPwa();
+    if (installed) {
+      this.store.showToast('Aplicativo instalado com sucesso!', 'success');
+      this.showInstallChooser.set(false);
+      this.installHint.set('');
+      return;
+    }
+
+    if (target === 'desktop') {
+      const shortcut = this.pwa.downloadDesktopShortcut();
+      if (shortcut) {
+        this.store.showToast('Atalho do site baixado para o PC.', 'success');
+      } else {
+        this.store.showToast(this.pwa.getManualInstallHint('desktop'), 'info');
+      }
+      this.installHint.set(this.pwa.getManualInstallHint('desktop'));
+      return;
+    }
+
+    this.installHint.set(this.pwa.getManualInstallHint('android'));
+    this.store.showToast(this.pwa.getManualInstallHint('android'), 'info');
   }
 
   onAvatarSelected(event: Event) {

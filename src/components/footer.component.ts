@@ -80,7 +80,7 @@ import { CommonModule } from '@angular/common';
                 <a href="https://instagram.com/yarakids_moda_infantil" target="_blank" class="w-10 h-10 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-md" aria-label="Instagram">
                   <app-icon name="instagram" size="18px"></app-icon>
                 </a>
-                <a href="https://wa.me/5594991334401" target="_blank" class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-md" aria-label="WhatsApp">
+                <a [href]="whatsappLink" target="_blank" class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-md" aria-label="WhatsApp">
                   <app-icon name="whatsapp" size="18px"></app-icon>
                 </a>
               </div>
@@ -100,7 +100,7 @@ import { CommonModule } from '@angular/common';
             <div>
               <h4 class="font-bold text-brand-dark dark:text-white mb-5 text-sm uppercase tracking-wider">Ajuda</h4>
               <ul class="space-y-3 text-sm text-gray-500 dark:text-gray-400 font-medium">
-                <li><a href="https://wa.me/5594991334401" target="_blank" class="hover:text-brand-pink transition-colors">Central de Atendimento</a></li>
+                <li><a [href]="whatsappLink" target="_blank" class="hover:text-brand-pink transition-colors">Central de Atendimento</a></li>
                 <li><a routerLink="/feedback" class="hover:text-brand-pink transition-colors">Enviar Feedback</a></li>
                 <li><a routerLink="/politica-de-trocas" class="hover:text-brand-pink transition-colors">Política de Trocas</a></li>
                 <li><a routerLink="/minha-conta" class="hover:text-brand-pink transition-colors">Acompanhar Pedido</a></li>
@@ -112,8 +112,8 @@ import { CommonModule } from '@angular/common';
             <div>
                <div class="bg-brand-soft dark:bg-pink-900/10 p-5 rounded-2xl border border-brand-pink/10 dark:border-pink-900/30 mb-6 group hover:border-brand-pink/30 transition-colors">
                  <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Dúvidas?</p>
-                 <a href="https://wa.me/5594991334401" target="_blank" class="text-lg font-black text-brand-dark dark:text-white hover:text-brand-pink transition-colors flex items-center gap-2">
-                   <app-icon name="whatsapp" size="18px" class="text-green-500"></app-icon> (94) 99133-4401
+                 <a [href]="whatsappLink" target="_blank" class="text-lg font-black text-brand-dark dark:text-white hover:text-brand-pink transition-colors flex items-center gap-2">
+                   <app-icon name="whatsapp" size="18px" class="text-green-500"></app-icon> {{ whatsappDisplay }}
                  </a>
                  <p class="text-[10px] text-gray-400 mt-2 font-medium">Seg a Sex: 09h às 18h</p>
                </div>
@@ -144,6 +144,20 @@ export class FooterComponent {
   email = '';
   isSubscribed = false;
   isSubscribing = false;
+
+  get whatsappDisplay(): string {
+    return this.store.institutional().whatsapp?.trim() || '(94) 99133-4401';
+  }
+
+  get whatsappLink(): string {
+    return this.buildWhatsappLink(this.whatsappDisplay);
+  }
+
+  private buildWhatsappLink(rawPhone: string): string {
+    const digits = String(rawPhone || '').replace(/\D/g, '');
+    const normalized = digits ? (digits.startsWith('55') ? digits : `55${digits}`) : '5594991334401';
+    return `https://wa.me/${normalized}`;
+  }
 
   async subscribe() {
     if (!this.store.termsAccepted()) {

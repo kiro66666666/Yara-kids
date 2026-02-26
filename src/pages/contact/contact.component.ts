@@ -31,7 +31,7 @@ import { Title } from '@angular/platform-browser';
                  <div>
                     <h3 class="font-bold text-xl text-gray-800 dark:text-white mb-2">WhatsApp</h3>
                     <p class="text-gray-500 dark:text-gray-400 mb-4 text-sm">Resposta rápida em horário comercial.</p>
-                    <a href="https://wa.me/5594991334401" target="_blank" class="text-green-600 dark:text-green-400 font-bold hover:underline">Iniciar Conversa &rarr;</a>
+                    <a [href]="whatsappLink" target="_blank" class="text-green-600 dark:text-green-400 font-bold hover:underline">Iniciar Conversa &rarr;</a>
                  </div>
               </div>
 
@@ -108,6 +108,13 @@ export class ContactComponent {
   subject = '';
   message = '';
   loading = false;
+
+  get whatsappLink(): string {
+    const raw = this.store.institutional().whatsapp || '(94) 99133-4401';
+    const digits = raw.replace(/\D/g, '');
+    const normalized = digits ? (digits.startsWith('55') ? digits : `55${digits}`) : '5594991334401';
+    return `https://wa.me/${normalized}`;
+  }
 
   constructor() {
     this.title.setTitle('Fale Conosco | YARA Kids');
