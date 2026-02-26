@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, effect } from '@angular/core';
+import { Component, inject, OnInit, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -15,11 +15,30 @@ type AuthMode = 'login' | 'register' | 'forgot-password';
   template: `
     <div class="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
       <div class="absolute inset-0 z-0">
-        <img
-          src="https://images.unsplash.com/photo-1621452773781-0f992ee03591?w=1920&q=80"
-          class="w-full h-full object-cover animate-pulse-slow scale-105"
-          style="animation: zoomEffect 20s infinite alternate;"
-        >
+        @if (authBanner(); as banner) {
+          @if (banner.mediaType === 'video' && banner.videoUrl) {
+            <video
+              [src]="banner.videoUrl"
+              class="w-full h-full object-cover"
+              autoplay
+              loop
+              muted
+              playsinline
+            ></video>
+          } @else {
+            <img
+              [src]="banner.image || fallbackAuthBackground"
+              class="w-full h-full object-cover animate-pulse-slow scale-105"
+              style="animation: zoomEffect 20s infinite alternate;"
+            >
+          }
+        } @else {
+          <img
+            [src]="fallbackAuthBackground"
+            class="w-full h-full object-cover animate-pulse-slow scale-105"
+            style="animation: zoomEffect 20s infinite alternate;"
+          >
+        }
         <div class="absolute inset-0 bg-gradient-to-br from-brand-pink/90 via-purple-900/80 to-black/80 mix-blend-multiply"></div>
         <div class="absolute inset-0 bg-black/20"></div>
       </div>
@@ -187,6 +206,14 @@ export class LoginComponent implements OnInit {
   store = inject(StoreService);
   router = inject(Router);
   title = inject(Title);
+  fallbackAuthBackground = 'https://images.unsplash.com/photo-1621452773781-0f992ee03591?w=1920&q=80';
+  authBanner = computed(() => {
+    const banners = this.store
+      .banners()
+      .filter(b => b.location === 'auth-hero' && b.active !== false)
+      .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    return banners[0] || null;
+  });
 
   viewMode: AuthMode = 'login';
 
@@ -279,5 +306,6 @@ export class LoginComponent implements OnInit {
     this.viewMode = 'login';
   }
 }
+
 
 

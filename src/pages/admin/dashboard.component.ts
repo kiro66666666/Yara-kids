@@ -965,7 +965,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   }
   
   deleteBanner(id: string) { if(confirm('Excluir?')) this.store.deleteBanner(id); }
-  getBannerLocationName(l: string) { const m: any = {'home-hero': 'Home: Principal', 'home-mid': 'Home: Meio', 'catalog-top': 'Catálogo: Topo', 'catalog-sidebar': 'Catálogo: Lateral'}; return m[l] || l; }
+  getBannerLocationName(l: string) { const m: any = {'home-hero': 'Home: Principal', 'home-mid': 'Home: Meio', 'catalog-top': 'Catálogo: Topo', 'catalog-sidebar': 'Catálogo: Lateral', 'auth-hero': 'Login/Cadastro: Fundo'}; return m[l] || l; }
 
   openCouponModal() { this.newCoupon = { code: '', type: 'percent', value: 0, minPurchase: 0, active: true, description: '' }; this.showCouponModal = true; }
   saveCoupon() {

@@ -56,7 +56,7 @@ export interface Review {
 
 export interface Banner {
   id: string;
-  location: 'home-hero' | 'home-mid' | 'catalog-sidebar' | 'catalog-top';
+  location: 'home-hero' | 'home-mid' | 'catalog-sidebar' | 'catalog-top' | 'auth-hero';
   image: string;
   mediaType?: 'image' | 'video';
   videoUrl?: string;
