@@ -2,10 +2,17 @@ import { Injectable, signal } from '@angular/core';
 
 export type InstallTarget = 'desktop' | 'android' | 'ios';
 export type InstallAttemptStatus = 'installed' | 'dismissed' | 'unavailable' | 'error';
+export type DesktopFallbackStatus = 'downloaded' | 'copied' | 'manual';
 
 export interface InstallAttemptResult {
   status: InstallAttemptStatus;
   message: string;
+}
+
+export interface DesktopFallbackResult {
+  status: DesktopFallbackStatus;
+  message: string;
+  hint: string;
 }
 
 @Injectable({
@@ -53,11 +60,15 @@ export class PwaService {
   }
 
   hasInstallPrompt(): boolean {
-    return !!this.deferredPrompt;
+    return !this.isStandalone() && !!this.deferredPrompt;
   }
 
   async attemptInstall(): Promise<InstallAttemptResult> {
     this.showInstallPromotion.set(false);
+
+    if (this.isStandalone()) {
+      return { status: 'unavailable', message: 'Aplicativo ja esta instalado neste dispositivo.' };
+    }
 
     if (this.deferredPrompt) {
       try {
@@ -74,6 +85,26 @@ export class PwaService {
         this.deferredPrompt = null;
         return { status: 'error', message: 'Falha ao abrir o instalador do navegador.' };
       }
+    }
+
+    const isLocalHost =
+      window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!window.isSecureContext && !isLocalHost) {
+      this.installSource.set('manual');
+      return {
+        status: 'unavailable',
+        message: 'Instalacao automatica indisponivel sem HTTPS. Use o modo manual.'
+      };
+    }
+
+    if (this.isIOS()) {
+      this.installSource.set('manual');
+      return { status: 'unavailable', message: this.getManualInstallHint('ios') };
+    }
+
+    if (this.isAndroid()) {
+      this.installSource.set('manual');
+      return { status: 'unavailable', message: this.getManualInstallHint('android') };
     }
 
     this.installSource.set('manual');
@@ -118,6 +149,38 @@ export class PwaService {
     } catch {
       return false;
     }
+  }
+
+  async runDesktopFallback(): Promise<DesktopFallbackResult> {
+    const hint = this.getManualInstallHint('desktop');
+
+    if (this.downloadDesktopShortcut()) {
+      return {
+        status: 'downloaded',
+        message: 'Atalho do site baixado para o PC.',
+        hint
+      };
+    }
+
+    const appUrl = `${window.location.origin}/#/`;
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(appUrl);
+        return {
+          status: 'copied',
+          message: 'Link do app copiado. Cole no navegador para criar atalho manual.',
+          hint
+        };
+      } catch {
+        // Ignora e segue para orientacao manual.
+      }
+    }
+
+    return {
+      status: 'manual',
+      message: hint,
+      hint
+    };
   }
 
   dismissPrompt() {

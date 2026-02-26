@@ -255,12 +255,23 @@ export class AccountComponent {
     }
 
     if (result.status === 'dismissed') {
-      this.store.showToast(result.message, 'info');
+      this.store.showToast('Instalacao automatica cancelada. Escolha uma opcao abaixo.', 'info');
+      this.installHint.set(this.pwa.getManualInstallHint(this.pwa.getRecommendedTarget()));
+      this.showInstallChooser.set(true);
+      return;
+    }
+
+    const recommended = this.pwa.getRecommendedTarget();
+    if (recommended === 'desktop') {
+      const fallback = await this.pwa.runDesktopFallback();
+      this.store.showToast(fallback.message, fallback.status === 'downloaded' ? 'success' : 'info');
+      this.installHint.set(fallback.hint);
+      this.showInstallChooser.set(true);
       return;
     }
 
     this.store.showToast(result.message, 'info');
-    this.installHint.set(this.pwa.getManualInstallHint(this.pwa.getRecommendedTarget()));
+    this.installHint.set(this.pwa.getManualInstallHint(recommended));
     this.showInstallChooser.set(true);
   }
 
@@ -272,14 +283,20 @@ export class AccountComponent {
       return;
     }
 
-    if (target === 'desktop' && !this.pwa.hasInstallPrompt()) {
-      const shortcut = this.pwa.downloadDesktopShortcut();
-      if (shortcut) {
-        this.store.showToast('Atalho do site baixado para o PC.', 'success');
-      } else {
-        this.store.showToast(this.pwa.getManualInstallHint('desktop'), 'info');
+    if (target === 'desktop') {
+      if (this.pwa.hasInstallPrompt()) {
+        const result = await this.pwa.attemptInstall();
+        if (result.status === 'installed') {
+          this.store.showToast('Aplicativo instalado com sucesso!', 'success');
+          this.showInstallChooser.set(false);
+          this.installHint.set('');
+          return;
+        }
       }
-      this.installHint.set(this.pwa.getManualInstallHint('desktop'));
+
+      const fallback = await this.pwa.runDesktopFallback();
+      this.store.showToast(fallback.message, fallback.status === 'downloaded' ? 'success' : 'info');
+      this.installHint.set(fallback.hint);
       return;
     }
 
@@ -288,22 +305,6 @@ export class AccountComponent {
       this.store.showToast('Aplicativo instalado com sucesso!', 'success');
       this.showInstallChooser.set(false);
       this.installHint.set('');
-      return;
-    }
-
-    if (result.status === 'dismissed') {
-      this.store.showToast(result.message, 'info');
-      return;
-    }
-
-    if (target === 'desktop') {
-      const shortcut = this.pwa.downloadDesktopShortcut();
-      if (shortcut) {
-        this.store.showToast('Atalho do site baixado para o PC.', 'success');
-      } else {
-        this.store.showToast(this.pwa.getManualInstallHint('desktop'), 'info');
-      }
-      this.installHint.set(this.pwa.getManualInstallHint('desktop'));
       return;
     }
 
