@@ -32,12 +32,12 @@ import { IconComponent } from '../ui/icons';
       </div>
 
       <!-- Share Button (Left of Heart) -->
-      <button (click)="openShare($event)" class="absolute top-3 right-14 z-20 w-9 h-9 bg-white dark:bg-brand-darkbg text-gray-400 rounded-full flex items-center justify-center hover:text-brand-pink hover:scale-110 transition-all shadow-sm active:scale-90 border border-transparent hover:border-brand-pink/20">
+      <button type="button" (pointerdown)="blockCardInteraction($event)" (click)="openShare($event)" class="absolute top-3 right-14 z-20 w-9 h-9 bg-white dark:bg-brand-darkbg text-gray-400 rounded-full flex items-center justify-center hover:text-brand-pink hover:scale-110 transition-all shadow-sm active:scale-90 border border-transparent hover:border-brand-pink/20 touch-manipulation">
         <app-icon name="share" size="16px"></app-icon>
       </button>
 
       <!-- Favorite Button -->
-      <button (click)="toggleFavorite($event)" class="absolute top-3 right-3 z-10 w-9 h-9 bg-white dark:bg-brand-darkbg rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-sm active:scale-90"
+      <button type="button" (pointerdown)="blockCardInteraction($event)" (click)="toggleFavorite($event)" class="absolute top-3 right-3 z-10 w-9 h-9 bg-white dark:bg-brand-darkbg rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-sm active:scale-90 touch-manipulation"
         [class.text-red-500]="isFav()" [class.text-gray-300]="!isFav()">
         <app-icon name="heart" size="18px" [class.fill-current]="isFav()"></app-icon>
       </button>
@@ -126,19 +126,19 @@ import { IconComponent } from '../ui/icons';
         <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" (click)="closeShare()">
           <div class="bg-white dark:bg-brand-darksurface rounded-2xl w-full max-w-xs shadow-2xl p-6 relative animate-slide-up border border-gray-100 dark:border-gray-700" (click)="$event.stopPropagation()">
             
-            <button (click)="closeShare()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white">
+            <button type="button" (click)="closeShare()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white">
               <app-icon name="x" size="20px"></app-icon>
             </button>
 
             <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4 text-center">Compartilhar</h3>
             
             <div class="flex flex-col gap-3">
-              <button (click)="shareWhatsApp()" class="flex items-center gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors font-bold text-sm">
+              <button type="button" (click)="shareWhatsApp()" class="flex items-center gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors font-bold text-sm">
                 <app-icon name="whatsapp" size="20px"></app-icon>
                 <span>Enviar no WhatsApp</span>
               </button>
-              
-              <button (click)="copyLink()" class="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-bold text-sm relative">
+               
+              <button type="button" (click)="copyLink()" class="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-bold text-sm relative">
                 <app-icon name="link" size="20px"></app-icon>
                 <span>{{ linkCopied() ? 'Link Copiado!' : 'Copiar Link' }}</span>
                 @if(linkCopied()) {
@@ -203,6 +203,11 @@ export class ProductCardComponent {
     event.preventDefault();
     event.stopPropagation();
     this.showShareModal.set(true);
+  }
+
+  blockCardInteraction(event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
   }
 
   closeShare() {

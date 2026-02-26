@@ -259,24 +259,48 @@
                   </div>
                </div>
                <!-- Payment -->
-               <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
-                  <h3 class="text-lg font-bold text-brand-pink mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">Pagamento</h3>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div>
-                       <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Chave PIX (CNPJ/Email)</label>
-                       <input type="text" [(ngModel)]="tempSettings.pixKey" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
-                     </div>
-                     <div class="md:col-span-2 border-t border-gray-100 dark:border-gray-700 mt-2 pt-2"><p class="text-xs font-bold text-gray-400 mb-2">Mercado Pago (Integração)</p></div>
-                     <div>
-                       <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Public Key</label>
-                       <input type="text" [(ngModel)]="tempSettings.mercadoPagoPublicKey" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
-                     </div>
-                     <div>
-                       <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Access Token</label>
-                       <input type="password" [(ngModel)]="tempSettings.mercadoPagoAccessToken" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
-                     </div>
-                  </div>
-               </div>
+                <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
+                   <h3 class="text-lg font-bold text-brand-pink mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">Pagamento</h3>
+                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Chave PIX (CNPJ/Email)</label>
+                        <input type="text" [(ngModel)]="tempSettings.pixKey" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                      </div>
+                      <div class="md:col-span-2 border-t border-gray-100 dark:border-gray-700 mt-2 pt-2"><p class="text-xs font-bold text-gray-400 mb-2">Mercado Pago (Integração)</p></div>
+                      <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Public Key</label>
+                        <input type="text" [(ngModel)]="tempSettings.mercadoPagoPublicKey" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                      </div>
+                      <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Máximo de parcelas</label>
+                        <input type="number" min="1" max="24" [(ngModel)]="tempSettings.mercadoPagoMaxInstallments" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                      </div>
+                      <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Parcelas sem juros</label>
+                        <input type="number" min="0" max="24" [(ngModel)]="tempSettings.mercadoPagoFreeInstallments" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                      </div>
+                      <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Taxa de juros mensal (%)</label>
+                        <input type="number" min="0" step="0.01" [(ngModel)]="tempSettings.mercadoPagoInterestRate" class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink focus:border-transparent outline-none transition-all">
+                      </div>
+                      <div class="md:col-span-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/70 p-4 space-y-2">
+                        <div class="flex flex-wrap items-center gap-2 text-xs">
+                          <span class="font-bold text-gray-600 dark:text-gray-300">Segurança:</span>
+                          <span class="px-2 py-1 rounded-lg font-bold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">Access Token apenas em Secrets</span>
+                          <button type="button" (click)="refreshPaymentHealth()" class="px-2 py-1 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-bold hover:bg-white dark:hover:bg-gray-900 transition-colors">Atualizar status</button>
+                        </div>
+                        <div class="text-xs text-gray-600 dark:text-gray-300 flex flex-wrap gap-x-4 gap-y-1">
+                          <span>Mercado Pago: <strong [class.text-green-600]="paymentHealth().mercadoPagoConfigured" [class.text-red-500]="!paymentHealth().mercadoPagoConfigured">{{ paymentHealth().mercadoPagoConfigured ? 'configurado' : 'não configurado' }}</strong></span>
+                          <span>Ambiente: <strong class="uppercase">{{ paymentHealth().mercadoPagoMode }}</strong></span>
+                          <span>Conectividade: <strong [class.text-green-600]="paymentHealth().mercadoPagoReachable" [class.text-yellow-600]="!paymentHealth().mercadoPagoReachable">{{ paymentHealth().mercadoPagoReachable ? 'ok' : 'pendente' }}</strong></span>
+                          <span>Resend: <strong [class.text-green-600]="paymentHealth().resendConfigured" [class.text-red-500]="!paymentHealth().resendConfigured">{{ paymentHealth().resendConfigured ? 'configurado' : 'não configurado' }}</strong></span>
+                        </div>
+                        @if (paymentHealth().message) {
+                          <p class="text-[11px] text-gray-500 dark:text-gray-400">{{ paymentHealth().message }}</p>
+                        }
+                      </div>
+                   </div>
+                </div>
                <!-- Legal Texts -->
                <div class="bg-white dark:bg-brand-darksurface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
                   <h3 class="text-lg font-bold text-brand-pink mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">Textos Institucionais</h3>
@@ -566,14 +590,22 @@
                 } @else {
                   <div class="space-y-3">
                     <div>
-                      <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">URL do vídeo</label>
+                      <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Arquivo de vídeo (MP4/WebM/Ogg)</label>
+                      <input type="file" accept="video/mp4,video/webm,video/ogg" (change)="onInstagramVideoFileSelected($event)" class="w-full p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-200">
+                      <p class="text-[11px] text-gray-400 mt-1">Você pode enviar arquivo do PC ou informar URL.</p>
+                      @if (newInstagramVideoFile) {
+                        <p class="text-[11px] text-gray-500 dark:text-gray-300 mt-1">Arquivo selecionado: {{ newInstagramVideoFile.name }}</p>
+                      }
+                    </div>
+                    <div>
+                      <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">URL do vídeo (opcional)</label>
                       <input [(ngModel)]="newInstagramVideoUrl" type="text" placeholder="https://..." class="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-pink outline-none transition-all">
                     </div>
                     <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                       <input type="checkbox" [(ngModel)]="newInstagramPlayAudioOnHover" class="rounded border-gray-300 text-brand-pink focus:ring-brand-pink">
                       Ativar som ao passar o mouse no site
                     </label>
-                    <button (click)="addInstagramPost()" [disabled]="!newInstagramVideoUrl.trim()" class="bg-brand-pink text-white px-6 py-3 rounded-xl font-bold hover:bg-pink-600 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button (click)="addInstagramPost()" [disabled]="!newInstagramVideoUrl.trim() && !newInstagramVideoFile" class="bg-brand-pink text-white px-6 py-3 rounded-xl font-bold hover:bg-pink-600 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
                       Adicionar Vídeo ao Feed
                     </button>
                   </div>
@@ -710,9 +742,15 @@
 
             <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/40 rounded-2xl p-4 flex items-start gap-3">
               <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-sm shrink-0">i</div>
-              <p class="text-sm text-blue-900 dark:text-blue-200">
-                Use esta área para campanhas globais: crie o conteúdo, selecione público, dispare agora ou agende. O histórico mostra status e permite reenviar falhas.
-              </p>
+              <div class="text-sm text-blue-900 dark:text-blue-200 space-y-2">
+                <p>Use esta área para campanhas globais: crie o conteúdo, selecione o público, dispare agora ou agende.</p>
+                <p class="text-xs opacity-90">
+                  Fluxo recomendado: 1) definir título e mensagem, 2) escolher audiência e deeplink, 3) enviar/agendar, 4) acompanhar status no histórico, 5) usar “Reenviar falhas” quando necessário.
+                </p>
+                <p class="text-xs opacity-90">
+                  Status: <strong>completed</strong> = entregue, <strong>processing</strong> = em andamento, <strong>failed</strong> = falhas totais/parciais.
+                </p>
+              </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

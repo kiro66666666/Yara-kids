@@ -183,8 +183,10 @@ export interface Institutional {
   consentTitle: string;
   consentText: string;
   mercadoPagoPublicKey?: string;
-  mercadoPagoAccessToken?: string;
   pixKey?: string; 
+  mercadoPagoMaxInstallments?: number;
+  mercadoPagoFreeInstallments?: number;
+  mercadoPagoInterestRate?: number;
   iconVersion?: number;
   notificationsEnabled?: boolean;
   defaultDeepLink?: string;
@@ -224,8 +226,10 @@ const DEFAULT_INSTITUTIONAL: Institutional = {
   consentTitle: 'Sua Privacidade é Importante',
   consentText: 'Para garantir uma experiência segura e salvar suas compras, precisamos que você concorde com nossos termos. Ao continuar, você aceita nossa Política de Privacidade e Termos de Uso.',
   mercadoPagoPublicKey: '',
-  mercadoPagoAccessToken: '',
-  pixKey: '00.000.000/0001-00'
+  pixKey: '00.000.000/0001-00',
+  mercadoPagoMaxInstallments: 12,
+  mercadoPagoFreeInstallments: 6,
+  mercadoPagoInterestRate: 2.99
 };
 
 const MOCK_CATEGORIES: Category[] = [
@@ -815,6 +819,7 @@ export class StoreService {
       const existing = await this.getLatestSiteSettingsRow();
       const currentData = existing?.data ?? {};
       const nextData = { ...currentData, appMode: mode };
+      delete (nextData as any).mercadoPagoAccessToken;
       await this.upsertSiteSettingsData(nextData);
 
       return true;
@@ -924,20 +929,28 @@ export class StoreService {
       const existing = await this.getLatestSiteSettingsRow();
       const settingsData = existing?.data;
       if (settingsData) {
+        const { mercadoPagoAccessToken: _ignoredToken, ...safeSettingsData } = settingsData || {};
         const normalizedAboutMedia = normalizeInstitutionalMedia(
-          settingsData?.aboutMedia,
-          settingsData?.aboutImage || DEFAULT_INSTITUTIONAL.aboutImage
+          safeSettingsData?.aboutMedia,
+          safeSettingsData?.aboutImage || DEFAULT_INSTITUTIONAL.aboutImage
         );
         const firstImage = normalizedAboutMedia.find(item => item.type === 'image')?.url;
+        const maxInstallmentsRaw = Number(safeSettingsData?.mercadoPagoMaxInstallments ?? DEFAULT_INSTITUTIONAL.mercadoPagoMaxInstallments);
+        const freeInstallmentsRaw = Number(safeSettingsData?.mercadoPagoFreeInstallments ?? DEFAULT_INSTITUTIONAL.mercadoPagoFreeInstallments);
+        const interestRateRaw = Number(safeSettingsData?.mercadoPagoInterestRate ?? DEFAULT_INSTITUTIONAL.mercadoPagoInterestRate);
+
         const merged = {
           ...DEFAULT_INSTITUTIONAL,
-          ...settingsData,
-          logoUrl: settingsData?.branding?.logoUrl || settingsData?.logoUrl || DEFAULT_INSTITUTIONAL.logoUrl,
+          ...safeSettingsData,
+          logoUrl: safeSettingsData?.branding?.logoUrl || safeSettingsData?.logoUrl || DEFAULT_INSTITUTIONAL.logoUrl,
           aboutMedia: normalizedAboutMedia,
-          aboutImage: firstImage || normalizedAboutMedia[0]?.url || settingsData?.aboutImage || DEFAULT_INSTITUTIONAL.aboutImage,
-          iconVersion: settingsData?.branding?.iconVersion || settingsData?.iconVersion || Date.now(),
-          notificationsEnabled: settingsData?.notifications?.enabled ?? true,
-          defaultDeepLink: settingsData?.notifications?.defaultDeepLink || '/'
+          aboutImage: firstImage || normalizedAboutMedia[0]?.url || safeSettingsData?.aboutImage || DEFAULT_INSTITUTIONAL.aboutImage,
+          iconVersion: safeSettingsData?.branding?.iconVersion || safeSettingsData?.iconVersion || Date.now(),
+          notificationsEnabled: safeSettingsData?.notifications?.enabled ?? true,
+          defaultDeepLink: safeSettingsData?.notifications?.defaultDeepLink || '/',
+          mercadoPagoMaxInstallments: Number.isFinite(maxInstallmentsRaw) ? Math.max(1, Math.min(24, Math.trunc(maxInstallmentsRaw))) : DEFAULT_INSTITUTIONAL.mercadoPagoMaxInstallments,
+          mercadoPagoFreeInstallments: Number.isFinite(freeInstallmentsRaw) ? Math.max(0, Math.min(24, Math.trunc(freeInstallmentsRaw))) : DEFAULT_INSTITUTIONAL.mercadoPagoFreeInstallments,
+          mercadoPagoInterestRate: Number.isFinite(interestRateRaw) ? Math.max(0, interestRateRaw) : DEFAULT_INSTITUTIONAL.mercadoPagoInterestRate
         };
         this.institutional.set(merged);
       }
@@ -984,10 +997,11 @@ export class StoreService {
 
   // --- Settings Persistence ---
   async updateInstitutional(data: Institutional) {
+    const { mercadoPagoAccessToken: _ignoredToken, ...safeData } = (data as any) || {};
     const normalizedAboutMedia = normalizeInstitutionalMedia(data.aboutMedia, data.aboutImage);
     const firstImage = normalizedAboutMedia.find(item => item.type === 'image')?.url;
     const normalizedInstitutional: Institutional = {
-      ...data,
+      ...safeData,
       aboutMedia: normalizedAboutMedia,
       aboutImage: firstImage || normalizedAboutMedia[0]?.url || data.aboutImage
     };
@@ -1013,6 +1027,7 @@ export class StoreService {
                 defaultDeepLink: normalizedInstitutional.defaultDeepLink || '/'
               }
             };
+            delete (nextData as any).mercadoPagoAccessToken;
 
             await this.upsertSiteSettingsData(nextData);
             this.showToast('Configuracoes salvas no servidor!', 'success');
@@ -1315,7 +1330,9 @@ export class StoreService {
     payment: string, 
     cpf?: string, 
     phone?: string, 
-    address?: OrderAddress 
+    address?: OrderAddress,
+    status?: Order['status'],
+    totalOverride?: number
   }) {
     const newOrder = this.buildOrder(data);
     this.orders.update(o => [newOrder, ...o]);
@@ -1335,13 +1352,14 @@ export class StoreService {
     return newOrder;
   }
 
-  private buildOrder(data: { customer: string; payment: string; cpf?: string; phone?: string; address?: OrderAddress }): Order {
+  private buildOrder(data: { customer: string; payment: string; cpf?: string; phone?: string; address?: OrderAddress; status?: Order['status']; totalOverride?: number }): Order {
     const currentUser = this.user();
+    const computedTotal = Number.isFinite(data.totalOverride as number) ? Number(data.totalOverride) : this.finalPrice();
     return {
       id: Math.floor(10000 + Math.random() * 90000).toString(),
       date: new Date().toLocaleDateString('pt-BR'),
-      status: 'pending',
-      total: this.finalPrice(),
+      status: data.status || 'pending',
+      total: computedTotal,
       items: [...this.cart()],
       customerName: data.customer,
       paymentMethod: data.payment,
@@ -1478,6 +1496,16 @@ export class StoreService {
             return false;
         }
         
+        try {
+          await this.supabase.callFunction('send-welcome-email', {
+            email,
+            name: name || 'Cliente'
+          });
+        } catch (welcomeErr) {
+          // Não bloqueia o fluxo de cadastro caso o e-mail transacional falhe.
+          console.error('Falha ao enviar e-mail de boas-vindas', welcomeErr);
+        }
+
         this.showToast('Cadastro realizado! Verifique seu e-mail para confirmar.', 'success');
         return true;
       } catch (e: any) {
@@ -1497,8 +1525,8 @@ export class StoreService {
        }
        try {
          const { error } = await this.supabase.supabase.auth.resetPasswordForEmail(email, {
-           redirectTo: globalThis.location.origin + '/#/minha-conta/update-password',
-         });
+           redirectTo: globalThis.location.origin + '/#/redefinir-senha',
+          });
          if (error) throw error;
          this.showToast('E-mail de recuperacao enviado!', 'success');
          return true;

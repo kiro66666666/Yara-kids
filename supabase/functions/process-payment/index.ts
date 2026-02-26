@@ -6,6 +6,17 @@ type PaymentBody = {
   amount?: number;
   installments?: number;
   idempotencyKey?: string;
+  cardToken?: string;
+  paymentMethodId?: string;
+  issuerId?: string | number;
+  payer?: {
+    email?: string;
+    identification?: {
+      type?: "CPF" | "CNPJ";
+      number?: string;
+    };
+    name?: string;
+  };
   customer?: {
     name?: string;
     cpf?: string;
@@ -36,8 +47,12 @@ serve(async (req) => {
     const method = body.method;
     const amount = Number(body.amount || 0);
     const installments = Number(body.installments || 1);
-    const idempotencyKey = (body.idempotencyKey || "").trim();
-    const cpfDigits = (body.customer?.cpf || "").replace(/\D/g, "");
+    const idempotencyKey = String(body.idempotencyKey || "").trim();
+
+    const payerEmail = String(body.payer?.email || "").trim().toLowerCase();
+    const payerIdType = body.payer?.identification?.type || "CPF";
+    const payerIdDigits = String(body.payer?.identification?.number || body.customer?.cpf || "").replace(/\D/g, "");
+    const payerName = String(body.payer?.name || body.customer?.name || "Cliente").trim();
 
     if (!idempotencyKey || idempotencyKey.length < 8) {
       return json({ ok: false, message: "idempotencyKey inválida." }, 400);
@@ -47,8 +62,25 @@ serve(async (req) => {
       return json({ ok: false, message: "Dados de pagamento inválidos." }, 400);
     }
 
-    if (!cpfDigits || cpfDigits.length !== 11) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(payerEmail)) {
+      return json({ ok: false, message: "E-mail do pagador inválido." }, 400);
+    }
+
+    if (payerIdType === "CPF" && payerIdDigits.length !== 11) {
       return json({ ok: false, message: "CPF inválido para pagamento." }, 400);
+    }
+
+    if (payerIdType === "CNPJ" && payerIdDigits.length !== 14) {
+      return json({ ok: false, message: "CNPJ inválido para pagamento." }, 400);
+    }
+
+    if (method === "card") {
+      const cardToken = String(body.cardToken || "").trim();
+      const paymentMethodId = String(body.paymentMethodId || "").trim();
+      if (!cardToken || !paymentMethodId) {
+        return json({ ok: false, message: "Token do cartão e bandeira são obrigatórios no pagamento por cartão." }, 400);
+      }
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -65,21 +97,24 @@ serve(async (req) => {
       return json({ ok: false, message: "Muitas tentativas. Tente novamente em instantes." }, 429);
     }
 
-
-    // Idempotência: se já existe tentativa finalizada, reaproveita resposta.
     const { data: existing } = await supabase
       .from("payment_attempts")
       .select("id, provider_payment_id, status, response_payload")
       .eq("idempotency_key", idempotencyKey)
       .maybeSingle();
 
-    if (existing?.provider_payment_id && existing?.status === "approved") {
+    const existingStatus = String(existing?.status || "").toLowerCase();
+    if (existing?.provider_payment_id && (existingStatus === "approved" || existingStatus === "pending" || existingStatus === "in_process")) {
+      const existingNormalized = (existing?.response_payload as any)?.normalized || {};
       return json({
         ok: true,
         id: existing.id,
-        paymentId: existing.provider_payment_id,
+        paymentId: String(existing?.provider_payment_id || ""),
         status: existing.status,
-        ...((existing.response_payload as Record<string, unknown>) || {})
+        qrCode: existingNormalized.qrCode,
+        qrCodeBase64: existingNormalized.qrCodeBase64,
+        ticketUrl: existingNormalized.ticketUrl,
+        rawProviderStatus: existingNormalized.rawProviderStatus
       });
     }
 
@@ -99,21 +134,39 @@ serve(async (req) => {
       }, 503);
     }
 
-    const mpPayload: Record<string, unknown> = {
+    const basePayload: Record<string, unknown> = {
       transaction_amount: Number(amount.toFixed(2)),
-      payment_method_id: method === "pix" ? "pix" : "visa",
       description: "Pedido YARA Kids",
       installments: method === "card" ? Math.max(1, installments) : 1,
       external_reference: idempotencyKey,
       payer: {
-        email: "checkout@yarakids.com.br",
-        first_name: body.customer?.name || "Cliente",
+        email: payerEmail,
+        first_name: payerName,
         identification: {
-          type: "CPF",
-          number: cpfDigits
+          type: payerIdType,
+          number: payerIdDigits
         }
       }
     };
+
+    let mpPayload: Record<string, unknown>;
+    if (method === "pix") {
+      mpPayload = {
+        ...basePayload,
+        payment_method_id: "pix"
+      };
+    } else {
+      const issuerId = body.issuerId === undefined || body.issuerId === null || String(body.issuerId).trim() === ""
+        ? undefined
+        : Number.isFinite(Number(body.issuerId)) ? Number(body.issuerId) : String(body.issuerId);
+
+      mpPayload = {
+        ...basePayload,
+        token: String(body.cardToken || "").trim(),
+        payment_method_id: String(body.paymentMethodId || "").trim(),
+        ...(issuerId !== undefined ? { issuer_id: issuerId } : {})
+      };
+    }
 
     const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
@@ -126,28 +179,50 @@ serve(async (req) => {
     });
 
     const mpData = await mpResponse.json();
-
     const status = String(mpData?.status || "processing");
+    const rawProviderStatus = String(mpData?.status_detail || mpData?.status || "");
+    const paymentId = String(mpData?.id || "");
+    const transactionData = mpData?.point_of_interaction?.transaction_data || {};
+
+    const normalizedResult = {
+      paymentId,
+      status,
+      qrCode: transactionData?.qr_code || "",
+      qrCodeBase64: transactionData?.qr_code_base64 || "",
+      ticketUrl: transactionData?.ticket_url || mpData?.transaction_details?.external_resource_url || "",
+      rawProviderStatus
+    };
+
     await supabase.from("payment_attempts").upsert({
       idempotency_key: idempotencyKey,
       method,
       amount,
       installments,
-      provider_payment_id: String(mpData?.id || ""),
+      provider_payment_id: paymentId,
       status,
-      response_payload: mpData
+      response_payload: {
+        normalized: normalizedResult,
+        raw: mpData
+      }
     }, { onConflict: "idempotency_key" });
 
     if (!mpResponse.ok) {
-      return json({ ok: false, message: mpData?.message || "Falha ao processar pagamento.", detail: mpData }, 502);
+      return json({
+        ok: false,
+        message: String(mpData?.message || "Falha ao processar pagamento no provedor."),
+        rawProviderStatus,
+        detail: mpData
+      }, 502);
     }
 
     return json({
       ok: true,
-      paymentId: String(mpData?.id || ""),
+      paymentId,
       status,
-      qrCode: mpData?.point_of_interaction?.transaction_data?.qr_code,
-      qrCodeBase64: mpData?.point_of_interaction?.transaction_data?.qr_code_base64
+      qrCode: normalizedResult.qrCode,
+      qrCodeBase64: normalizedResult.qrCodeBase64,
+      ticketUrl: normalizedResult.ticketUrl,
+      rawProviderStatus
     });
   } catch (error) {
     return json({ ok: false, message: "Erro inesperado ao processar pagamento.", detail: String(error) }, 500);
@@ -163,7 +238,6 @@ function json(payload: unknown, status = 200) {
     }
   });
 }
-
 
 async function enforceRateLimit(
   supabase: ReturnType<typeof createClient>,

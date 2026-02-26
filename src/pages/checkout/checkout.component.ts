@@ -1,8 +1,8 @@
 ﻿
-import { Component, inject, signal, computed, effect } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StoreService } from '../../services/store.service';
-import { PaymentService, InstallmentOption } from '../../services/payment.service';
+import { PaymentService, InstallmentOption, PaymentResult } from '../../services/payment.service';
 import { TrackingService } from '../../services/tracking.service';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -39,15 +39,19 @@ import { MaskDirective } from '../../directives/mask.directive';
                     <span class="w-8 h-8 bg-brand-dark text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md">1</span> 
                     Dados Pessoais
                   </h3>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                     <div class="md:col-span-2">
-                       <label class="text-xs font-bold text-gray-500 uppercase ml-1 mb-1.5 block">Nome Completo</label>
-                       <input type="text" [(ngModel)]="customerName" class="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/20 outline-none transition-all font-medium text-gray-700" placeholder="Como devemos te chamar?">
-                     </div>
-                     <div>
-                       <label class="text-xs font-bold text-gray-500 uppercase ml-1 mb-1.5 block">WhatsApp</label>
-                       <input type="text" appMask="phone" [(ngModel)]="customerPhone" placeholder="(00) 00000-0000" class="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/20 outline-none transition-all font-medium text-gray-700">
-                     </div>
+                   <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div class="md:col-span-2">
+                        <label class="text-xs font-bold text-gray-500 uppercase ml-1 mb-1.5 block">Nome Completo</label>
+                        <input type="text" [(ngModel)]="customerName" class="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/20 outline-none transition-all font-medium text-gray-700" placeholder="Como devemos te chamar?">
+                      </div>
+                      <div class="md:col-span-2">
+                        <label class="text-xs font-bold text-gray-500 uppercase ml-1 mb-1.5 block">E-mail</label>
+                        <input type="email" [(ngModel)]="customerEmail" class="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/20 outline-none transition-all font-medium text-gray-700" placeholder="seuemail@exemplo.com">
+                      </div>
+                      <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase ml-1 mb-1.5 block">WhatsApp</label>
+                        <input type="text" appMask="phone" [(ngModel)]="customerPhone" placeholder="(00) 00000-0000" class="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/20 outline-none transition-all font-medium text-gray-700">
+                      </div>
                      <div>
                        <label class="text-xs font-bold text-gray-500 uppercase ml-1 mb-1.5 block">CPF</label>
                        <input type="text" appMask="cpf" [(ngModel)]="customerCpf" placeholder="000.000.000-00" class="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-brand-pink focus:ring-2 focus:ring-brand-pink/20 outline-none transition-all font-medium text-gray-700">
@@ -112,7 +116,7 @@ import { MaskDirective } from '../../directives/mask.directive';
                         <span class="font-bold text-gray-800 text-lg flex items-center gap-2">
                            <span class="text-xl">💠</span> PIX
                         </span>
-                        <p class="text-sm text-gray-500 mt-1 leading-tight">Aprovação imediata ou envie o comprovante no WhatsApp.</p>
+                        <p class="text-sm text-gray-500 mt-1 leading-tight">Gere o QR code e pague com confirmação automática.</p>
                       </div>
                     </label>
 
@@ -161,18 +165,24 @@ import { MaskDirective } from '../../directives/mask.directive';
                            </div>
                            
                            <!-- Installment Selector -->
-                           <div class="col-span-2 mt-2">
-                             <label class="text-xs font-bold text-gray-500 uppercase ml-1 mb-1 block">Parcelamento</label>
-                             <select [(ngModel)]="selectedInstallment" class="w-full px-4 py-3 bg-white border-2 border-brand-pink/20 rounded-xl focus:border-brand-pink outline-none font-bold text-gray-700 cursor-pointer text-sm">
-                               <option [ngValue]="null" disabled selected>Selecione o número de parcelas</option>
-                               @for (opt of installmentOptions(); track opt.count) {
-                                 <option [ngValue]="opt">{{ opt.label }}</option>
-                               }
-                             </select>
-                           </div>
-                        </div>
-                      }
-                    </label>
+                            <div class="col-span-2 mt-2">
+                              <label class="text-xs font-bold text-gray-500 uppercase ml-1 mb-1 block">Parcelamento</label>
+                              <select [(ngModel)]="selectedInstallment" class="w-full px-4 py-3 bg-white border-2 border-brand-pink/20 rounded-xl focus:border-brand-pink outline-none font-bold text-gray-700 cursor-pointer text-sm">
+                                <option [ngValue]="null" disabled selected>Selecione o número de parcelas</option>
+                                @for (opt of installmentOptions(); track opt.count) {
+                                  <option [ngValue]="opt">{{ opt.label }}</option>
+                                }
+                              </select>
+                              @if (selectedInstallment) {
+                                <p class="text-xs mt-2 text-gray-500">
+                                  Juros: <strong>R$ {{ selectedInstallment.interestAmount.toFixed(2) }}</strong> •
+                                  Total: <strong>R$ {{ selectedInstallment.total.toFixed(2) }}</strong>
+                                </p>
+                              }
+                            </div>
+                         </div>
+                       }
+                     </label>
                   </div>
                </div>
             </div>
@@ -257,24 +267,34 @@ import { MaskDirective } from '../../directives/mask.directive';
              <div class="w-32 h-32 bg-green-100 rounded-full flex items-center justify-center mb-8 text-green-50 shadow-xl shadow-green-100 animate-bounce-gentle">
                <app-icon name="check" size="64px"></app-icon>
              </div>
-             
-             @if (viaWhatsapp) {
-                <h2 class="text-3xl font-black text-gray-800 mb-4">Redirecionando para WhatsApp...</h2>
-                <p class="text-gray-500 mb-8 max-w-md mx-auto">Seu pedido foi montado! Finalize o pagamento e o envio diretamente com nossa atendente.</p>
-                <div class="text-sm bg-blue-50 text-blue-700 p-4 rounded-xl border border-blue-100 mb-8">
-                   Se a janela do WhatsApp não abriu, verifique seu bloqueador de pop-ups.
-                </div>
-             } @else {
-                <h2 class="text-4xl font-black text-gray-800 mb-4">Pedido Realizado! 🎉</h2>
-                <p class="text-xl text-gray-500 mb-8 max-w-lg leading-relaxed">
-                   @if(paymentMethod === 'pix') {
-                     Seu código PIX foi gerado com sucesso.
-                   } @else {
-                     Pagamento aprovado. Obrigado por comprar na YARA Kids.
+             <h2 class="text-4xl font-black text-gray-800 mb-4">Pedido Realizado! 🎉</h2>
+             <p class="text-xl text-gray-500 mb-8 max-w-lg leading-relaxed">
+                @if(paymentMethod === 'pix') {
+                  PIX gerado com sucesso. Pague para confirmar automaticamente.
+                } @else if (paymentResult?.status === 'approved') {
+                  Pagamento aprovado. Obrigado por comprar na YARA Kids.
+                } @else {
+                  Pagamento em análise pelo provedor. Você será atualizado em breve.
+                }
+             </p>
+
+             @if (paymentMethod === 'pix' && pixPayload()) {
+               <div class="w-full max-w-xl bg-white border border-gray-200 rounded-3xl p-6 mb-8 shadow-sm">
+                 <h3 class="font-black text-xl text-gray-800 mb-4">Pague com PIX</h3>
+                 @if (pixPayload()?.qrCodeBase64) {
+                   <img [src]="'data:image/png;base64,' + pixPayload()?.qrCodeBase64" alt="QR Code PIX" class="w-56 h-56 mx-auto border border-gray-200 rounded-2xl p-2 bg-white mb-4">
+                 }
+                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1 text-left">Código copia e cola</label>
+                 <textarea readonly [value]="pixPayload()?.qrCode || ''" class="w-full p-3 text-xs rounded-xl bg-gray-50 border border-gray-200 text-gray-700 min-h-24"></textarea>
+                 <div class="flex flex-wrap items-center justify-center gap-3 mt-4">
+                   <button type="button" (click)="copyPixCode()" class="px-5 py-3 rounded-xl bg-brand-pink text-white font-bold hover:bg-pink-600 transition-colors">Copiar código PIX</button>
+                   @if (pixPayload()?.ticketUrl) {
+                     <a [href]="pixPayload()?.ticketUrl || '#'" target="_blank" class="px-5 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors">Abrir link PIX</a>
                    }
-                </p>
+                 </div>
+               </div>
              }
-             
+              
              <div class="flex flex-col sm:flex-row gap-4 w-full justify-center">
                  <button (click)="goAccount()" class="px-8 py-4 bg-white border-2 border-gray-100 text-gray-600 font-bold rounded-full hover:bg-gray-50 transition-all">
                    Ver Meus Pedidos
@@ -297,6 +317,7 @@ export class CheckoutComponent {
   
   paymentMethod: 'pix' | 'card' = 'pix';
   customerName = '';
+  customerEmail = '';
   customerPhone = '';
   customerCpf = '';
   
@@ -315,7 +336,7 @@ export class CheckoutComponent {
   
   orderComplete = false;
   processingPayment = false;
-  viaWhatsapp = false;
+  paymentResult: PaymentResult | null = null;
   
   loadingCep = false;
   addressFilled = false;
@@ -327,6 +348,10 @@ export class CheckoutComponent {
   });
   
   selectedInstallment: InstallmentOption | null = null;
+
+  constructor() {
+    this.customerEmail = this.store.user()?.email || '';
+  }
 
   async searchCep() {
     if (this.cep.length >= 8) {
@@ -348,112 +373,128 @@ export class CheckoutComponent {
   async finishOrder() {
     if (this.processingPayment) return;
 
-    // Basic Validation
-    if (!this.customerName || !this.customerCpf || !this.address) {
-        this.store.showToast('Preencha todos os dados de entrega', 'error');
-        return;
+    if (!this.customerName || !this.customerCpf || !this.address || !this.customerEmail) {
+      this.store.showToast('Preencha nome, e-mail, CPF e endereço.', 'error');
+      return;
     }
 
-    // Card Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(this.customerEmail.trim())) {
+      this.store.showToast('Informe um e-mail válido para o pagamento.', 'error');
+      return;
+    }
+
     if (this.paymentMethod === 'card') {
-        if (!this.cardData.number || !this.selectedInstallment) {
-            this.store.showToast('Preencha os dados do cartão e selecione o parcelamento', 'error');
-            return;
-        }
+      if (!this.cardData.number || !this.cardData.holder || !this.cardData.expiry || !this.cardData.cvv || !this.selectedInstallment) {
+        this.store.showToast('Preencha os dados do cartão e selecione o parcelamento.', 'error');
+        return;
+      }
     }
 
     this.processingPayment = true;
 
     try {
-        await this.paymentService.processPayment({
-            method: this.paymentMethod,
-            amount: this.paymentMethod === 'card' && this.selectedInstallment ? this.selectedInstallment.total : this.store.finalPrice(),
-            installments: this.selectedInstallment ? this.selectedInstallment.count : 1,
-            idempotencyKey: this.generateIdempotencyKey(),
-            customer: {
-              name: this.customerName,
-              cpf: this.customerCpf,
-              phone: this.customerPhone
-            },
+      const baseTotal = this.store.finalPrice();
+      const paymentAmount = this.paymentMethod === 'pix'
+        ? Number((baseTotal * 0.95).toFixed(2))
+        : Number((this.selectedInstallment?.total || baseTotal).toFixed(2));
+
+      const idempotencyKey = this.generateIdempotencyKey();
+      const cpfDigits = this.customerCpf.replace(/\D/g, '');
+
+      let cardTokenPayload: { cardToken?: string; paymentMethodId?: string; issuerId?: string | number } = {};
+      if (this.paymentMethod === 'card') {
+        const tokenized = await this.paymentService.tokenizeCard({
+          cardNumber: this.cardData.number,
+          cardholderName: this.cardData.holder,
+          cardExpiration: this.cardData.expiry,
+          securityCode: this.cardData.cvv,
+          identificationType: 'CPF',
+          identificationNumber: cpfDigits
         });
+        cardTokenPayload = {
+          cardToken: tokenized.cardToken,
+          paymentMethodId: tokenized.paymentMethodId,
+          issuerId: tokenized.issuerId
+        };
+      }
 
-        // SUCCESS: Create Local Order
-        const order = await this.createLocalOrder();
-        
-        // Track Purchase
-        this.tracking.logPurchase(order.id, order.total, order.items);
+      const paymentResult = await this.paymentService.processPayment({
+        method: this.paymentMethod,
+        amount: paymentAmount,
+        installments: this.paymentMethod === 'card' ? (this.selectedInstallment?.count || 1) : 1,
+        idempotencyKey,
+        ...cardTokenPayload,
+        payer: {
+          email: this.customerEmail.trim(),
+          identification: {
+            type: 'CPF',
+            number: cpfDigits
+          },
+          name: this.customerName
+        },
+        customer: {
+          name: this.customerName,
+          cpf: this.customerCpf,
+          phone: this.customerPhone
+        }
+      });
 
-        this.viaWhatsapp = false;
-        this.orderComplete = true;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      const normalizedStatus = String(paymentResult.status || '').toLowerCase();
+      const approved = normalizedStatus === 'approved';
+      const pendingProvider = normalizedStatus === 'pending' || normalizedStatus === 'in_process';
 
-    } catch (e) {
-        // ERROR: Fallback to WhatsApp
-        console.error('Payment Error, falling back to WhatsApp', e);
-        this.store.showToast('Instabilidade no pagamento automático. Redirecionando para finalizar no WhatsApp...', 'info');
-        await this.finalizeViaWhatsApp();
+      if (!approved && !pendingProvider) {
+        throw new Error(`Pagamento não aprovado (${paymentResult.rawProviderStatus || paymentResult.status || 'status desconhecido'}).`);
+      }
+
+      const orderStatus = approved ? 'paid' : 'pending';
+      const order = await this.createLocalOrder(orderStatus, paymentAmount);
+      this.tracking.logPurchase(order.id, order.total, order.items);
+
+      this.paymentResult = paymentResult;
+      this.orderComplete = true;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e: any) {
+      console.error('Payment error', e);
+      this.store.showToast(e?.message || 'Falha ao processar pagamento. Tente novamente.', 'error');
     } finally {
-        this.processingPayment = false;
+      this.processingPayment = false;
     }
   }
 
-  createLocalOrder() {
+  createLocalOrder(status: 'pending' | 'paid', totalOverride: number) {
     return this.store.createOrder({
-        customer: this.customerName || 'Cliente Convidado',
-        payment: this.paymentMethod,
-        cpf: this.customerCpf,
-        phone: this.customerPhone,
-        address: {
-            cep: this.cep,
-            street: this.address,
-            number: this.addressNumber,
-            city: this.city
-        }
+      customer: this.customerName || 'Cliente Convidado',
+      payment: this.paymentMethod,
+      cpf: this.customerCpf,
+      phone: this.customerPhone,
+      status,
+      totalOverride,
+      address: {
+        cep: this.cep,
+        street: this.address,
+        number: this.addressNumber,
+        city: this.city
+      }
     });
   }
 
-  async finalizeViaWhatsApp() {
-    // 1. Create Order locally (Pending)
-    const order = await this.createLocalOrder();
+  pixPayload() {
+    if (!this.paymentResult) return null;
+    return this.paymentResult;
+  }
 
-    // 2. Format Message
-    const cartItems = order.items.map(i => 
-        `▪️ ${i.quantity}x ${i.name} (${i.selectedSize}/${i.selectedColor})`
-    ).join('\n');
+  async copyPixCode() {
+    const code = this.paymentResult?.qrCode;
+    if (!code) return;
 
-    const paymentText = this.paymentMethod === 'pix' ? 'PIX (5% OFF)' : `Cartão (${this.selectedInstallment?.count || 1}x)`;
-
-    const msg = `
-👋 Olá! Fiz um pedido no site e quero finalizar.
-🆔 *Pedido #${order.id}*
-
-👤 *Cliente:* ${this.customerName}
-📄 *CPF:* ${this.customerCpf}
-
-📦 *Itens:*
-${cartItems}
-
-💰 *Total:* R$ ${order.total.toFixed(2)}
-💳 *Pagamento:* ${paymentText}
-📍 *Entrega:* ${this.address}, ${this.addressNumber} - ${this.city} (${this.cep})
-
-Aguardo a chave PIX ou link de pagamento!
-    `.trim();
-
-    // 3. WhatsApp Redirect
-    // Strip non-digits from store phone number
-    const storePhone = this.store.institutional().whatsapp.replace(/\D/g, '') || '5594991334401'; 
-    // Ensure country code 55 if missing (simple check)
-    const finalPhone = storePhone.length <= 11 ? `55${storePhone}` : storePhone;
-
-    const url = `https://wa.me/${finalPhone}?text=${encodeURIComponent(msg)}`;
-    
-    // Open in new tab
-    window.open(url, '_blank');
-
-    this.viaWhatsapp = true;
-    this.orderComplete = true;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    try {
+      await navigator.clipboard.writeText(code);
+      this.store.showToast('Código PIX copiado!', 'success');
+    } catch {
+      this.store.showToast('Não foi possível copiar o código PIX.', 'error');
+    }
   }
 
 

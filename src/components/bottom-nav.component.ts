@@ -85,12 +85,12 @@ export class BottomNavComponent {
   router = inject(Router);
 
   isFavoritesActive() {
-    return this.router.url.includes('minha-conta') && !this.router.url.includes('login');
+    return this.router.url.includes('minha-conta') && this.router.url.includes('section=favoritos');
   }
 
   goToFavorites() {
     if (this.store.user()) {
-      this.router.navigate(['/minha-conta']);
+      this.router.navigate(['/minha-conta'], { queryParams: { section: 'favoritos' } });
     } else {
       this.router.navigate(['/login']);
     }

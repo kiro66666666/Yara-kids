@@ -146,7 +146,7 @@ export class FooterComponent {
   isSubscribing = false;
 
   get whatsappDisplay(): string {
-    return this.store.institutional().whatsapp?.trim() || '(94) 99133-4401';
+    return this.store.institutional().whatsapp?.trim() || 'WhatsApp';
   }
 
   get whatsappLink(): string {
@@ -155,7 +155,8 @@ export class FooterComponent {
 
   private buildWhatsappLink(rawPhone: string): string {
     const digits = String(rawPhone || '').replace(/\D/g, '');
-    const normalized = digits ? (digits.startsWith('55') ? digits : `55${digits}`) : '5594991334401';
+    if (!digits) return '#';
+    const normalized = digits.startsWith('55') ? digits : `55${digits}`;
     return `https://wa.me/${normalized}`;
   }
 

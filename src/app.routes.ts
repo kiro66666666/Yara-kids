@@ -27,6 +27,14 @@ export const routes: Routes = [
     path: 'login', 
     loadComponent: () => import('./pages/auth/login.component').then(m => m.LoginComponent) 
   },
+  {
+    path: 'redefinir-senha',
+    loadComponent: () => import('./pages/auth/update-password.component').then(m => m.UpdatePasswordComponent)
+  },
+  {
+    path: 'minha-conta/update-password',
+    loadComponent: () => import('./pages/auth/update-password.component').then(m => m.UpdatePasswordComponent)
+  },
   { 
     path: 'minha-conta', 
     loadComponent: () => import('./pages/account/account.component').then(m => m.AccountComponent),

@@ -70,6 +70,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   newInstagramFile: File | null = null;
   newInstagramMediaType: 'image' | 'video' = 'image';
   newInstagramVideoUrl = '';
+  newInstagramVideoFile: File | null = null;
   newInstagramPlayAudioOnHover = false;
 
   notificationComposer: NotificationComposerInput = {
@@ -84,6 +85,20 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     channels: ['web', 'android']
   };
   templateName = '';
+  paymentHealth = signal<{
+    loaded: boolean;
+    mercadoPagoConfigured: boolean;
+    mercadoPagoMode: 'sandbox' | 'production' | 'unknown';
+    mercadoPagoReachable: boolean;
+    resendConfigured: boolean;
+    message?: string;
+  }>({
+    loaded: false,
+    mercadoPagoConfigured: false,
+    mercadoPagoMode: 'unknown',
+    mercadoPagoReachable: false,
+    resendConfigured: false
+  });
   bannerLinkSearch = signal('');
   aboutMediaType: 'image' | 'video' = 'image';
   aboutMediaUrl = '';
@@ -152,6 +167,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.handleViewportChange();
     window.addEventListener('resize', this.handleViewportChange);
     this.notifications.loadAdminData();
+    this.refreshPaymentHealth();
   }
 
   ngOnDestroy() {
@@ -293,10 +309,54 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       this.aboutImageFile = null;
       this.ensureAboutMediaInitialized();
       this.resetAboutMediaInputs();
+      this.refreshPaymentHealth();
     }
     this.view.set(newView);
     if (!this.isDesktopViewport()) {
       this.sidebarOpen.set(false);
+    }
+  }
+
+  async refreshPaymentHealth() {
+    if (this.store.mode() !== 'real') {
+      this.paymentHealth.set({
+        loaded: true,
+        mercadoPagoConfigured: false,
+        mercadoPagoMode: 'unknown',
+        mercadoPagoReachable: false,
+        resendConfigured: false,
+        message: 'Status de secrets disponível apenas no Modo Real.'
+      });
+      return;
+    }
+
+    this.paymentHealth.set({
+      loaded: false,
+      mercadoPagoConfigured: false,
+      mercadoPagoMode: 'unknown',
+      mercadoPagoReachable: false,
+      resendConfigured: false
+    });
+
+    try {
+      const result = await this.store.supabase.callFunction('payment-health', {});
+      this.paymentHealth.set({
+        loaded: true,
+        mercadoPagoConfigured: !!result?.mercadoPagoConfigured,
+        mercadoPagoMode: (result?.mercadoPagoMode === 'sandbox' || result?.mercadoPagoMode === 'production') ? result.mercadoPagoMode : 'unknown',
+        mercadoPagoReachable: !!result?.mercadoPagoReachable,
+        resendConfigured: !!result?.resendConfigured,
+        message: String(result?.message || '')
+      });
+    } catch (e: any) {
+      this.paymentHealth.set({
+        loaded: true,
+        mercadoPagoConfigured: false,
+        mercadoPagoMode: 'unknown',
+        mercadoPagoReachable: false,
+        resendConfigured: false,
+        message: String(e?.message || 'Não foi possível verificar os secrets de integração.')
+      });
     }
   }
 
@@ -317,17 +377,56 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   onInstagramImageSelected(base64: string) {
     this.newInstagramImage = base64;
     this.newInstagramMediaType = 'image';
+    this.newInstagramVideoUrl = '';
+    this.newInstagramVideoFile = null;
+    this.newInstagramPlayAudioOnHover = false;
   }
   onInstagramFileSelected(file: File) {
     this.newInstagramFile = file;
     this.newInstagramMediaType = 'image';
+    this.newInstagramVideoUrl = '';
+    this.newInstagramVideoFile = null;
+    this.newInstagramPlayAudioOnHover = false;
+  }
+  onInstagramVideoFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] || null;
+    this.newInstagramVideoFile = file;
+    this.newInstagramMediaType = 'video';
+
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      this.store.showToast('Selecione um arquivo de vídeo válido (MP4/WebM/Ogg).', 'error');
+      this.newInstagramVideoFile = null;
+      return;
+    }
+
+    if (this.store.mode() !== 'real') {
+      this.fileToDataUrl(file).then(url => (this.newInstagramVideoUrl = url));
+    }
   }
   
   async addInstagramPost() {
       if (this.newInstagramMediaType === 'video') {
-        const videoUrl = this.newInstagramVideoUrl.trim();
+        let videoUrl = this.newInstagramVideoUrl.trim();
+
+        if (this.newInstagramVideoFile) {
+          if (this.store.mode() === 'real') {
+            const uploadedVideoUrl = await this.store.supabase.uploadVideo(this.newInstagramVideoFile, 'instagram');
+            if (uploadedVideoUrl) {
+              videoUrl = uploadedVideoUrl;
+            } else {
+              this.store.showToast('Falha ao enviar vídeo. Tente novamente.', 'error');
+              return;
+            }
+          } else if (!videoUrl) {
+            videoUrl = await this.fileToDataUrl(this.newInstagramVideoFile);
+          }
+        }
+
         if (!videoUrl) {
-          this.store.showToast('Informe a URL do vídeo para o feed.', 'error');
+          this.store.showToast('Informe a URL do vídeo ou envie um arquivo do PC.', 'error');
           return;
         }
         await this.store.addInstagramPost({
@@ -336,6 +435,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           playAudioOnHover: this.newInstagramPlayAudioOnHover
         });
         this.newInstagramVideoUrl = '';
+        this.newInstagramVideoFile = null;
         this.newInstagramPlayAudioOnHover = false;
         this.newInstagramImage = '';
         this.newInstagramFile = null;
@@ -357,6 +457,9 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       });
       this.newInstagramImage = '';
       this.newInstagramFile = null;
+      this.newInstagramVideoUrl = '';
+      this.newInstagramVideoFile = null;
+      this.newInstagramPlayAudioOnHover = false;
   }
 
   async deleteInstagramPost(id: string | number) {

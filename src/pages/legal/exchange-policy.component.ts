@@ -1,6 +1,7 @@
 ﻿
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { StoreService } from '../../services/store.service';
 
 @Component({
   selector: 'app-exchange-policy',
@@ -34,15 +35,28 @@ import { RouterLink } from '@angular/router';
         <p>Todos os nossos produtos passam por um rigoroso controle de qualidade. Se ainda assim receber uma peça com defeito, entre em contato imediatamente. Faremos a troca ou devolução sem nenhum custo.</p>
 
         <h3 class="text-xl font-bold text-brand-dark dark:text-white">Como Solicitar?</h3>
-        <p>Entre em contato através do nosso WhatsApp <strong>(94) 99133-4401</strong> informando o número do pedido e o motivo da troca. Nossa equipe irá te orientar sobre o envio.</p>
+        <p>Entre em contato através do nosso WhatsApp <strong>{{ whatsappDisplay }}</strong> informando o número do pedido e o motivo da troca. Nossa equipe irá te orientar sobre o envio.</p>
 
         <div class="mt-12 flex gap-4">
-          <a routerLink="/contato" class="px-6 py-3 bg-brand-dark dark:bg-white dark:text-brand-dark text-white font-bold rounded-xl hover:bg-black dark:hover:bg-gray-200 transition-colors no-underline text-center">Falar com Atendimento</a>
+          <a [href]="whatsappLink" target="_blank" class="px-6 py-3 bg-brand-dark dark:bg-white dark:text-brand-dark text-white font-bold rounded-xl hover:bg-black dark:hover:bg-gray-200 transition-colors no-underline text-center">Falar com Atendimento</a>
           <a routerLink="/" class="px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-white font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors no-underline text-center">Voltar para Loja</a>
         </div>
       </div>
     </div>
   `
 })
-export class ExchangePolicyComponent {}
+export class ExchangePolicyComponent {
+  private store = inject(StoreService);
+
+  get whatsappDisplay() {
+    return this.store.institutional().whatsapp?.trim() || 'WhatsApp';
+  }
+
+  get whatsappLink() {
+    const digits = this.whatsappDisplay.replace(/\D/g, '');
+    if (!digits) return '#';
+    const normalized = digits.startsWith('55') ? digits : `55${digits}`;
+    return `https://wa.me/${normalized}`;
+  }
+}
 

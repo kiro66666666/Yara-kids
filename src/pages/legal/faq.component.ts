@@ -66,9 +66,10 @@ export class FaqComponent {
   searchTerm = signal('');
 
   get whatsappLink(): string {
-    const raw = this.store.institutional().whatsapp || '(94) 99133-4401';
+    const raw = this.store.institutional().whatsapp || '';
     const digits = raw.replace(/\D/g, '');
-    const normalized = digits ? (digits.startsWith('55') ? digits : `55${digits}`) : '5594991334401';
+    if (!digits) return '#';
+    const normalized = digits.startsWith('55') ? digits : `55${digits}`;
     return `https://wa.me/${normalized}`;
   }
 
