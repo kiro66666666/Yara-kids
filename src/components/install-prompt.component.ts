@@ -119,6 +119,17 @@ export class InstallPromptComponent implements OnInit {
       return;
     }
 
+    if (target === 'desktop' && !this.pwa.hasInstallPrompt()) {
+      const shortcut = this.pwa.downloadDesktopShortcut();
+      if (shortcut) {
+        this.store.showToast('Atalho do site baixado para o PC.', 'success');
+      } else {
+        this.store.showToast(this.pwa.getManualInstallHint('desktop'), 'info');
+      }
+      this.installHint.set(this.pwa.getManualInstallHint('desktop'));
+      return;
+    }
+
     const result = await this.pwa.attemptInstall();
     if (result.status === 'installed') {
       this.store.showToast(result.message, 'success');

@@ -32,18 +32,18 @@ import { IconComponent } from '../ui/icons';
       </div>
 
       <!-- Share Button (Left of Heart) -->
-      <button type="button" (click)="openShare($event)" class="absolute top-3 right-14 z-40 w-9 h-9 bg-white dark:bg-brand-darkbg text-gray-600 dark:text-gray-300 rounded-full flex items-center justify-center hover:text-brand-pink hover:scale-110 transition-all shadow-sm active:scale-90 border border-transparent hover:border-brand-pink/20 touch-manipulation" aria-label="Compartilhar produto">
+      <button type="button" (click)="openShare($event)" class="absolute top-3 right-16 z-50 w-10 h-10 bg-white dark:bg-brand-darkbg text-gray-600 dark:text-gray-300 rounded-full flex items-center justify-center hover:text-brand-pink hover:scale-110 transition-all shadow-sm active:scale-90 border border-transparent hover:border-brand-pink/20 touch-manipulation pointer-events-auto" aria-label="Compartilhar produto">
         <app-icon name="share" size="16px"></app-icon>
       </button>
 
       <!-- Favorite Button -->
-      <button type="button" (click)="toggleFavorite($event)" class="absolute top-3 right-3 z-40 w-9 h-9 bg-white dark:bg-brand-darkbg rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-sm active:scale-90 touch-manipulation border border-gray-100 dark:border-gray-700"
+      <button type="button" (click)="toggleFavorite($event)" class="absolute top-3 right-3 z-50 w-10 h-10 bg-white dark:bg-brand-darkbg rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-sm active:scale-90 touch-manipulation border border-gray-100 dark:border-gray-700 pointer-events-auto"
         [class.text-red-500]="isFav()" [class.text-gray-600]="!isFav()" [class.dark:text-gray-300]="!isFav()" aria-label="Favoritar produto">
         <app-icon name="heart" size="18px" [class.fill-current]="isFav()"></app-icon>
       </button>
 
       <!-- Image Area (Lazy Loaded with Skeleton) -->
-      <a [routerLink]="['/produto', product().id]" class="block aspect-[4/5] overflow-hidden relative bg-gray-50 dark:bg-gray-800">
+      <a [routerLink]="['/produto', product().id]" class="block aspect-[4/5] overflow-hidden relative bg-gray-50 dark:bg-gray-800 z-0">
         
         <!-- Skeleton Loader (Visible while loading) -->
         <div class="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse z-0" *ngIf="isLoading()"></div>

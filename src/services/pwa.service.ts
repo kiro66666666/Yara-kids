@@ -52,6 +52,10 @@ export class PwaService {
     });
   }
 
+  hasInstallPrompt(): boolean {
+    return !!this.deferredPrompt;
+  }
+
   async attemptInstall(): Promise<InstallAttemptResult> {
     this.showInstallPromotion.set(false);
 
